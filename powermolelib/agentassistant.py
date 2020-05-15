@@ -54,7 +54,7 @@ __email__ = '''<inquiry@intoreflection.co>'''
 __status__ = '''Development'''  # "Prototype", "Development", "Production".
 
 # This is the main prefix used for logging
-LOGGER_BASENAME = '''machine'''
+LOGGER_BASENAME = '''Assistant'''
 LOGGER = logging.getLogger(LOGGER_BASENAME)  # non-class objects like functions can consult this Logger object
 
 # Constant for Pexpect. This prompt is default for Fedora and CentOS.
@@ -100,7 +100,7 @@ class Assistant(ABC):
             result = response.get('result')
         except URLError:  # urllib.request.urlopen()
             self._logger.error('agent could not be instructed. probable cause: '
-                               'Machine unreachable or client has not connection to the Internet')
+                               'host unreachable or client has not connection to the Internet')
             result = False
         except ConnectionResetError:  # urllib.request.urlopen()
             self._logger.error('agent could not be instructed. probable cause: '

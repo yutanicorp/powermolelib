@@ -50,7 +50,7 @@ from struct import pack, unpack
 from time import sleep
 
 # Constants
-LOCAL_PORT_AGENT = 44191  # the local port the agent uses to listen for instructions from Machine.
+LOCAL_PORT_AGENT = 44191  # the local port the agent uses to listen for instructions from Assistant.
 # IMPORTANT NOTE: the ports used by Tor, File, and Interactive mode on destination host (*here*)
 #   are sent by a subclass of the AgentAssistant class
 
@@ -67,7 +67,7 @@ ATYP_DOMAINNAME = b'\x03'  # DOMAINNAME '03'
 
 # Logging
 LOGGER = logging.getLogger()  # not used?
-LOGGER_BASENAME = '''agent'''
+LOGGER_BASENAME = '''Agent'''
 
 
 def validate_http_instruction(request):
@@ -110,13 +110,13 @@ class LoggerMixin:  # pylint: disable=too-few-public-methods
 
 
 class Agent(LoggerMixin):
-    """Listens for instructions send by Machine."""
+    """Listens for instructions send by Assistant."""
 
     def __init__(self, local_port_agent):
         """Initialize the Agent object.
 
         Args:
-            local_port_agent (basestring): The local port used to listen for instructions from Machine.
+            local_port_agent (basestring): The local port used to listen for instructions from Assistant.
 
         """
         super().__init__()
@@ -150,7 +150,7 @@ class Agent(LoggerMixin):
                 """Creates the response."""
                 try:
                     data = self.rfile.read(int(self.headers['Content-Length']))  # b'{"process":"heartbeat_responder"}
-                    self._logger.debug('the following request was received from Machine: %s', data)
+                    self._logger.debug('the following request was received from Assistant: %s', data)
                     instruction_string = data.decode('utf-8')  # convert byte to string (JSON format)
                     instruction_dict = json.loads(instruction_string)  # convert JSON to dict
                     # example: {'process': 'authenticate_host', 'arguments': {'hostname': 'server.example.com'}}
@@ -201,7 +201,7 @@ class Agent(LoggerMixin):
         return True
 
     # def authenticate_host(self, **kwargs):
-    #     """Authenticate Machine."""
+    #     """Authenticate host."""
     #     hostname = kwargs.get('hostname')
     #     self.authenticate = Authenticate(expected_hostname=hostname)
     #     return self.authenticate.start()
@@ -380,7 +380,7 @@ class DataProtocol(LoggerMixin):  # --> Give thoughts about if FileServer should
 
 
 class CommandServer(LoggerMixin):  # implementation follows in next release -- WHAT IMPLEMENTATION?
-    """Listens for Linux commands send by InteractiveMachine() and responds with result."""
+    """Listens for Linux commands send by InteractiveAssistant() and responds with result."""
 
     #  determine first whether port is bind or not
     #  < code >

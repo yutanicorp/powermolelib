@@ -56,7 +56,7 @@ class LoggerMixin:  # pylint: disable=too-few-public-methods
     """Contains a logger method for use by other classes."""
 
     def __init__(self):
-        logger_basename = '''agent'''
+        logger_basename = '''Transfer Agent'''
         self._logger = logging.getLogger(f'{logger_basename}.{self.__class__.__name__}')
 
 
@@ -71,7 +71,7 @@ class TransferAgent(LoggerMixin):
         self.path_ssh_cfg_minitor = path_ssh_cfg_minitor
 
     def __str__(self):
-        return 'TransferAgent'
+        return 'Transfer Agent'
 
     def create_ssh_config(self):
         """______________."""
@@ -82,7 +82,7 @@ class TransferAgent(LoggerMixin):
         running_script = inspect.getframeinfo(inspect.currentframe()).filename
         running_script_dir = os.path.dirname(os.path.abspath(running_script))
         path_file = os.path.join(running_script_dir, 'payload', 'agent.py')
-        self._logger.debug('minitoragent.py resides in: %s', running_script_dir)
+        self._logger.debug('agent.py resides in: %s', running_script_dir)
         return path_file
 
     def _generate_ssh_runtime_param(self):

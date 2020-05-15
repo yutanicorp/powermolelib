@@ -62,7 +62,7 @@ class LoggerMixin:  # pylint: disable=too-few-public-methods
     """Contains a logger method for use by other classes."""
 
     def __init__(self):
-        logger_basename = '''agent'''
+        logger_basename = '''Tunnel'''
         self._logger = logging.getLogger(f'{logger_basename}.{self.__class__.__name__}')
 
 
@@ -122,18 +122,34 @@ class Tunnel(LoggerMixin):
         self._logger.debug(runtime_param)
         return runtime_param
 
-    def start(self):
-        """__________________."""
+    def start(self, debug=None):
+        """Starts and controls SSH (child application) along with parameters.
+
+        In addition, this method and mines for 'Authenticated' keywords, so
+        we can keep track which hosts have been connected through.
+
+        Args:
+            debug(basestring): if True, TIMEOUT will not be raised and may block indefinitely. Use only for debugging
+                                purposes to capture the output of the child, which is essentially, hidden 'under the
+                                hood', and write it to a file.
+
+        """
         result = True
         try:
-            self.child = pexpect.spawn(self._generate_ssh_runtime_param(), env={"TERM": "dumb"})
-            # self.process.setecho(False)  # doesn't seem to have effect
-            # self.process.waitnoecho()  # doesn't seem to have effect
+            if debug:
+                self.child = pexpect.spawn(self._generate_ssh_runtime_param(), env={"TERM": "dumb"}, encoding='utf-8',
+                                           timeout=None)
+            else:
+                self.child = pexpect.spawn(self._generate_ssh_runtime_param(), env={"TERM": "dumb"}, encoding='utf-8')
+            # setecho() doesn't seem to have effect.
+            #    doc says: Not supported on platforms where isatty() returns False.
+            #    perhaps related to the recursive shells (SSH spawns a new shell in the current shell)
+            self.child.setecho(False)
             self._logger.debug('going through the stream to match patterns')
             for hostname in self.all_hosts:
-                # according to the documentation, "If you wish to read up to the end of the child's output -
-                #         # without generating an EOF exception then use the expect(pexpect.EOF) method."
-                #         # but apparently this doesn't work in a shell within a shell (ssh spawns a new shell)
+                # according to the documentation, "If you wish to read up to the end of the child's output
+                #    without generating an EOF exception then use the expect(pexpect.EOF) method."
+                #    but apparently this doesn't work in a shell within a shell (ssh spawns a new shell)
                 index = self.child.expect(
                     [f'Authenticated to {hostname}', 'Last failed login:', 'Last login:', 'socket error',
                      'not accessible', 'fingerprint', 'open failed: connect failed:', pexpect.TIMEOUT])
@@ -155,11 +171,11 @@ class Tunnel(LoggerMixin):
                     self._logger.warning('warning: hostname automatically added to list of known hosts')
                     self.child.sendline('yes')
                 elif index == 6:
-                    self._logger.error('ssh could not connect to %s', hostname)
+                    self._logger.error('SSH could not connect to %s', hostname)
                     self.child.terminate()
                     result = False
                 elif index == 7:
-                    self._logger.error('TIMEOUT exception was thrown. ssh could probably not connect to %s', hostname)
+                    self._logger.error('TIMEOUT exception was thrown. SSH could probably not connect to %s', hostname)
                     self.child.terminate()
                     result = False
                 else:
@@ -167,7 +183,7 @@ class Tunnel(LoggerMixin):
                     result = False
             self.child.expect(COMMAND_PROMPT)
         except pexpect.exceptions.ExceptionPexpect:
-            self._logger.error('EOF is read; ssh has exited abnormally')
+            self._logger.error('EOF is read; SSH has exited abnormally')
             self.child.terminate()
             result = False
         finally:
@@ -180,3 +196,12 @@ class Tunnel(LoggerMixin):
             self.child.terminate()
         self._logger.debug('ssh terminated')
         return True
+
+    def debug(self):
+        """Captures the output of the child (warning: BLOCKING)."""
+        fout = open('/home/vincent/mylog.txt', 'a')
+        self.child.logfile = fout
+        try:
+            self.child.readlines()
+        except pexpect.ExceptionPexpect:
+            pass

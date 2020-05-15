@@ -44,8 +44,8 @@ __status__ = '''Development'''  # "Prototype", "Development", "Production".
 
 class InvalidConfigurationFile(Exception):
     """The configuration file provided is not valid."""
-
+    #
     # def __init__(self):
-    #     self.message = '?'
+    #     self.message = 'configuration invalid'
     #     # Call the base class constructor with the parameters it needs
     #     super().__init__(self.message)

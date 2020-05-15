@@ -312,13 +312,13 @@ def start_ping(local_heartbeat_port):
         with urllib.request.urlopen(f'http://localhost:{local_heartbeat_port}', timeout=2, data=None) as request_obj:
             http_code = request_obj.getcode()
     except (URLError, ConnectionResetError):
-        LOGGER.debug('minitoragent did not respond to GET request. '
+        LOGGER.debug('agent did not respond to GET request. '
                      'probable cause: gateways or destination host unreachable, '
                      'localhost (client) has no connection to the Internet, or '
                      'the agent on destination host is not bind to local port.')
         result = False
     except timeout:  # this exception needed?
-        LOGGER.debug('minitoragent did not respond to GET request in a timely fashion.'
+        LOGGER.debug('agent did not respond to GET request in a timely fashion.'
                      'probable cause: gateways or destination host unreachable, '
                      'localhost (client) has no connection to the Internet, or '
                      'the agent on destination host is not bind to local port.')
