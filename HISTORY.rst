@@ -19,3 +19,9 @@ History
 ------------------
 
 * pypi complains filename has been used, increment version
+
+
+0.1.2 (15-05-2020)
+------------------
+
+* debug mode added + logger_basename given a correct name
