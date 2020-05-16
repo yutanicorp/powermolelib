@@ -31,3 +31,9 @@ History
 ------------------
 
 * tunnel.py is heavily refactored: 1) instead of assigning individual ports to the instance a dictionary is used, 2) a new method is created named periodically_purge_buffer() which should be called once from the cli + agentassistant.py is renamed to instructor.py
+
+
+1.0.1 (16-05-2020)
+------------------
+
+* _run_purger() modified to include try block + text updated
