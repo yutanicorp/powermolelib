@@ -422,12 +422,12 @@ class CommandServer(LoggerMixin):  # implementation follows in next release -- W
                 """Creates the response containing the result."""
                 try:
                     data = self.rfile.read(int(self.headers['Content-Length']))  # b'{"command":"ls -l /"}
-                    self._logger.debug('following raw Linux command was received from assistant: %s', data)
+                    self._logger.debug('following raw Linux command was received from instructor: %s', data)
                     command_string = data.decode('utf-8')  # convert byte to string in JSON format
                     command_dict = json.loads(command_string)  # convert JSON to dict
                     command_val = validate_http_command(command_dict)  # validate the structure of the content of req.
                     command = command_val.get('command')
-                    instance._logger.debug('following Linux command was received from assistant: %s', command)
+                    instance._logger.debug('following Linux command was received from instructor: %s', command)
                     # eg. b'{"command": "hostname"}'
                 except json.decoder.JSONDecodeError:  # json.loads()
                     self._logger.error('the content is incorrectly parsed in JSON')

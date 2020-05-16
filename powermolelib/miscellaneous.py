@@ -247,7 +247,7 @@ class StateManager:  # context manager
             object_.stop()
 
     def __exit__(self, exc_type, exc_value, exc_traceback):  # pylint: disable=inconsistent-return-statements
-        self._logger.info('terminating Agent, Assistant, and Tunnel...')
+        self._logger.info('terminating Agent, Instructor, and Tunnel...')
         self._clean_up()
         self._logger.info('Tunnel terminated')
         if exc_type is KeyboardInterrupt:

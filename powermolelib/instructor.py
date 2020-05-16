@@ -24,7 +24,7 @@
 #
 
 """
-Main code for agent assistant.
+Main code for instructor.
 
 .. _Google Python Style Guide:
    http://google.github.io/styleguide/pyguide.html

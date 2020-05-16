@@ -218,5 +218,8 @@ class Tunnel(LoggerMixin):  # pylint: disable=too-many-instance-attributes
 
     def _run_purger(self):
         while not self.terminate:
-            self.child.expect([pexpect.TIMEOUT], timeout=0.2)
-            sleep(2)
+            try:
+                self.child.expect([pexpect.TIMEOUT], timeout=0.2)
+                sleep(2)
+            except pexpect.exceptions.EOF:
+                pass
