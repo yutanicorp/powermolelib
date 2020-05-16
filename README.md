@@ -4,26 +4,37 @@
 # powermole/lib
 
 This package contains building blocks to make an encrypted connection via one or more intermediate hosts possible.
-In addition, this package also contains a module named agent which is transferred to the target destination host.
-The building block system provide easy scalability.
+The underlying foundation is SSH with the ProxyJump directive enabled.
+This package also contains modules that provides a variety of services.
+For simplicity, all modules are designed in a functional manner.
+
+The power of SSH is harnessed by the _transferagent.py_ and _tunnel.py_ modules.
+These modules are responsible for copying the Agent (_agent.py_) to the destination host and setting up tunneling.
+Once tunneling is established, the Agent is executed by _bootstrapagent.py_ by utilizing the stdin of Tunnel.
+The Instructor (_instructor.py_) is responsible for starting and stopping services provided by the Agent.
+These services includes: redirection of internet traffic (TOR mode), copying files (FILE mode), and issuing commands (INTERACTIVE mode).
+For port forwarding (FOR mode), the program simply relies on SSH itself.
+The Instructor communicates with the Agent by sending JSON messages over the forwarded connection provided by Tunnel.
+The Agent also responds to heartbeats send by localhost to check if connection is still intact.
+
 Use the package **powermolecli** to interact with this library.
 
 
 ## How it works
 
 ### Terminology
-* **tunnel** is an established connection from localhost to the target destination host through intermediate hosts (called Gateways).
-* **agent** is a python module running on the target destination host. It performs various functions.
-* **agent assistant** sends data and instructions to the *agent* by using a forwarded connection.
+* **Tunnel** is an established connection from localhost to the target destination host through intermediate hosts (called Gateways).
+* **Agent** is a python module running on the target destination host. It performs various functions.
+* **Instructor** sends instructions to the *Agent* by utilizing a forwarded connection provided by *Tunnel*.
 
 The program uses SSH to connect to the target destination host via one or more intermediaries.
 ![alt text](img/illustration_how_it_works__1.png)
 
-Through port forwarding, the program can communicate with the agent on the target destination host.
+Through port forwarding, the program can communicate with the Agent on the target destination host.
 ![alt text](img/illustration_how_it_works__2.png)
 
 
-The agent assistant in conjuction with the agent provides four modes:
+The Instructor in conjuction with the Agent provides four modes:
 
  * TOR mode
  * FOR(warding) mode
