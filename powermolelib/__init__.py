@@ -33,7 +33,7 @@ from ._version import __version__
 from .miscellaneous import Configuration, StateManager, Heartbeat, start_application, write_ssh_config_file
 from .bootstrapagent import BootstrapAgent
 from .tunnel import Tunnel
-from .instructor import Assistant, TorAssistant, ForAssistant, FileAssistant, InteractiveAssistant
+from .instructor import Instructor, TorInstructor, ForInstructor, FileInstructor, InteractiveInstructor
 from .transferagent import TransferAgent
 
 __author__ = '''Vincent Schouten <inquiry@intoreflection.co>'''
@@ -54,10 +54,10 @@ assert Heartbeat
 assert start_application
 assert write_ssh_config_file
 assert BootstrapAgent
-assert Assistant
+assert Instructor
 assert TransferAgent
-assert TorAssistant
-assert ForAssistant
-assert FileAssistant
-assert InteractiveAssistant
+assert TorInstructor
+assert ForInstructor
+assert FileInstructor
+assert InteractiveInstructor
 assert Tunnel

@@ -64,8 +64,8 @@ COMMAND_PROMPT = '[#$] '
 HTTP_RESPONSE = Schema({Required("result"): Any(True, False)})
 
 
-class Assistant(ABC):
-    """Models an Assistant to interact with the Agent residing on target destination host.
+class Instructor(ABC):
+    """Models an Instructor to interact with the Agent residing on target destination host.
 
     Note: As the Agent sits on top of target destination hosts' OS, many functions can be
     performed more effective.
@@ -151,7 +151,7 @@ class Assistant(ABC):
         pass
 
 
-class ForAssistant(Assistant):
+class ForInstructor(Instructor):
     """Provides interaction with the Agent, which resides on target destination host, to accommodate For mode.
 
     Functions:
@@ -166,7 +166,7 @@ class ForAssistant(Assistant):
             group_ports (dict): A group of ports for powermole to bind on (localhost and target destination host)
 
         """
-        Assistant.__init__(self, group_ports)
+        Instructor.__init__(self, group_ports)
 
     def start(self):
         """Starts the heartbeat responder."""
@@ -177,7 +177,7 @@ class ForAssistant(Assistant):
         return self.stop_agent()  # the Agent will stop any running services including the heartbeat responder
 
 
-class TorAssistant(Assistant):
+class TorInstructor(Instructor):
     """Provides interaction with the Agent, which resides on target destination host, to accommodate Tor mode.
 
     Functions:
@@ -194,7 +194,7 @@ class TorAssistant(Assistant):
             ip_address_e (basestring): The IP address on host (on a possible different ifcard) for outgoing connections.
 
         """
-        Assistant.__init__(self, group_ports)
+        Instructor.__init__(self, group_ports)
         self.ip_address_i = ip_address_i
         self.ip_address_e = ip_address_e
 
@@ -229,7 +229,7 @@ class TorAssistant(Assistant):
         return self.stop_agent()  # the Agent will stop any running services including the proxy server
 
 
-class InteractiveAssistant(Assistant):
+class InteractiveInstructor(Instructor):
     """Provides interaction with the agent, which resides on target destination host, to accommodate Interactive mode.
 
     Functions:
@@ -244,7 +244,7 @@ class InteractiveAssistant(Assistant):
             group_ports (dict): A group of ports for powermole to bind on (localhost and target destination host)
 
         """
-        Assistant.__init__(self, group_ports)
+        Instructor.__init__(self, group_ports)
 
     def start(self):
         """Performs authentication of the host and starts the heartbeat responder."""
@@ -303,8 +303,8 @@ class InteractiveAssistant(Assistant):
         return response
 
 
-# this class need a redesign!
-class FileAssistant(Assistant):
+# this class needs a redesign!
+class FileInstructor(Instructor):
     """Provides interaction with Agent, which resides on target destination host, to accommodate File mode.
 
     Functions:
@@ -319,7 +319,7 @@ class FileAssistant(Assistant):
             group_ports (dict): A group of ports for powermole to bind on (localhost and target destination host)
 
         """
-        Assistant.__init__(self, group_ports)
+        Instructor.__init__(self, group_ports)
         self.metadata_files = None
         self.file_client = None
 

@@ -132,6 +132,12 @@ class Configuration:  # pylint: disable=too-few-public-methods, too-many-instanc
             self.destination = config.get('destination')
             # ex. {'host_ip': '10.10.2.92', 'user':'root', 'identity_file': '~/.ssh/id_rsa_it_vm'}
             self.files = config.get('files', '')
+            # ex. _________________________
+            #
+            #   for next release,
+            #   when a source file has no name but an "*",
+            #   have it iterate over all files in that source dir
+            #
             forwarders = config.get('forwarders')
             # ex. [{'local_port': 587, 'remote_port': 587}, {'local_port': 995, 'remote_port': 995}]
             self.forwarders_string = ' '.join([f'-L:{forwarder["local_port"]}:'

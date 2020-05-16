@@ -151,7 +151,7 @@ class TransferAgent(LoggerMixin):
                 else:
                     self._logger.error('unknown state reached')
                     result = False
-            # self.child.expect(pexpect.EOF)
+            self.child.expect(pexpect.EOF)  # the buffer has to be 'read' continuously, otherwise Pexpect deteriorates
         except pexpect.exceptions.ExceptionPexpect:
             self._logger.error('EOF is read; ssh has exited abnormally')
             self.child.terminate()

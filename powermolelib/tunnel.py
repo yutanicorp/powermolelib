@@ -87,7 +87,8 @@ class Tunnel(LoggerMixin):  # pylint: disable=too-many-instance-attributes
         return 'Tunnel'
 
     def _generate_ssh_runtime_param(self):
-        last_host = self.all_hosts[-1]
+        # last_host = self.all_hosts[-1]
+        last_host = "localhost"
         var_param = None
         if self.mode == 'FOR':
             var_param = f'{self.forward_connections} '
