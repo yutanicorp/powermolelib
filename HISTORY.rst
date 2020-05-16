@@ -37,3 +37,9 @@ History
 ------------------
 
 * _run_purger() modified to include try block + text updated
+
+
+2.0.0 (16-05-2020)
+------------------
+
+* Assistant() renamed to Instructor() and start() of transferagent modified (due to bugfix: the agent module could never be copied successfully)
