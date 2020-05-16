@@ -33,7 +33,7 @@ from ._version import __version__
 from .miscellaneous import Configuration, StateManager, Heartbeat, start_application, write_ssh_config_file
 from .bootstrapagent import BootstrapAgent
 from .tunnel import Tunnel
-from .agentassistant import Assistant, TorAssistant, ForAssistant, FileAssistant, InteractiveAssistant
+from .instructor import Assistant, TorAssistant, ForAssistant, FileAssistant, InteractiveAssistant
 from .transferagent import TransferAgent
 
 __author__ = '''Vincent Schouten <inquiry@intoreflection.co>'''

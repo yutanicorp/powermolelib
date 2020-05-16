@@ -218,12 +218,12 @@ class Agent(LoggerMixin):
 
     def proxy_server_start(self, **kwargs):
         """Starts the proxy server."""
-        local_addr_i = '127.0.0.1'
-        local_port = kwargs.get('local_port')
-        ip_address_e = kwargs.get('ip_address_e')
+        local_addr_i = kwargs.get('remote_address_i')
+        local_port_i = kwargs.get('remote_port_i')
+        local_addr_e = kwargs.get('remote_address_e')
         self.proxy_server = ProxyServer(local_addr_i=local_addr_i,
-                                        local_port=local_port,
-                                        local_addr_e=ip_address_e)
+                                        local_port_i=local_port_i,
+                                        local_addr_e=local_addr_e)
         return self.proxy_server.start()
 
     def proxy_server_stop(self):
@@ -679,11 +679,11 @@ class ProxyServer(LoggerMixin):
 
     """
 
-    def __init__(self, local_addr_i, local_port, local_addr_e=None):
+    def __init__(self, local_addr_i, local_port_i, local_addr_e=None):
         """Initializes a Proxy object."""
         super().__init__()
         self.local_addr_i = local_addr_i
-        self.local_port = local_port
+        self.local_port_i = local_port_i
         self.local_addr_e = local_addr_e
         self.new_socket = None
         self.thread = None
@@ -691,7 +691,7 @@ class ProxyServer(LoggerMixin):
     def start(self):
         """Starts the SOCKS proxy server."""
         try:
-            self.new_socket = SocketServerInternal(self.local_addr_i, self.local_port)
+            self.new_socket = SocketServerInternal(self.local_addr_i, self.local_port_i)
             self.new_socket.create_socket_and_listen()
             self.thread = threading.Thread(target=self._execution)
             self.thread.start()

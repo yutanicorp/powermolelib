@@ -233,11 +233,12 @@ class StateManager:  # context manager
         self._running_instances = []
 
     def __enter__(self):
-        self._logger.info('setting up tunneling...')
+        # self._logger.info('setting up tunneling...')
+        self._logger.info('setting up Tunnel...')
         return self
 
     def add_object(self, object_):
-        """Collects instantiated Tunnel, instantiated Assistant and shape(s) for clean up purposes."""
+        """Collects instantiated Tunnel and Assistant, and shape(s) for clean up purposes."""
         self._running_instances.append(object_)
 
     def _clean_up(self):
@@ -245,10 +246,10 @@ class StateManager:  # context manager
             self._logger.debug('cleaning up %s', str(object_))
             object_.stop()
 
-    def __exit__(self, exc_type, exc_value, exc_traceback):
-        self._logger.info('terminating agent, assistant, and tunnel...')
+    def __exit__(self, exc_type, exc_value, exc_traceback):  # pylint: disable=inconsistent-return-statements
+        self._logger.info('terminating Agent, Assistant, and Tunnel...')
         self._clean_up()
-        self._logger.info('tunneling terminated')
+        self._logger.info('Tunnel terminated')
         if exc_type is KeyboardInterrupt:
             self._logger.debug("KeyboardInterrupt caught")
             return True  # https://effbot.org/zone/python-with-statement.htm
@@ -312,16 +313,16 @@ def start_ping(local_heartbeat_port):
         with urllib.request.urlopen(f'http://localhost:{local_heartbeat_port}', timeout=2, data=None) as request_obj:
             http_code = request_obj.getcode()
     except (URLError, ConnectionResetError):
-        LOGGER.debug('agent did not respond to GET request. '
+        LOGGER.debug('Agent did not respond to GET request. '
                      'probable cause: gateways or destination host unreachable, '
                      'localhost (client) has no connection to the Internet, or '
-                     'the agent on destination host is not bind to local port.')
+                     'Agent on destination host is not bind to local port.')
         result = False
     except timeout:  # this exception needed?
-        LOGGER.debug('agent did not respond to GET request in a timely fashion.'
+        LOGGER.debug('Agent did not respond to GET request in a timely fashion.'
                      'probable cause: gateways or destination host unreachable, '
                      'localhost (client) has no connection to the Internet, or '
-                     'the agent on destination host is not bind to local port.')
+                     'Agent on destination host is not bind to local port.')
         result = False
     if http_code == 200:
         result = True

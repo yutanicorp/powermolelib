@@ -56,7 +56,7 @@ class LoggerMixin:  # pylint: disable=too-few-public-methods
     """Contains a logger method for use by other classes."""
 
     def __init__(self):
-        logger_basename = '''Transfer Agent'''
+        logger_basename = '''TransferAgent'''
         self._logger = logging.getLogger(f'{logger_basename}.{self.__class__.__name__}')
 
 
@@ -71,7 +71,7 @@ class TransferAgent(LoggerMixin):
         self.path_ssh_cfg_minitor = path_ssh_cfg_minitor
 
     def __str__(self):
-        return 'Transfer Agent'
+        return 'TransferAgent'
 
     def create_ssh_config(self):
         """______________."""
@@ -106,8 +106,8 @@ class TransferAgent(LoggerMixin):
         self._logger.debug(runtime_param)
         return runtime_param
 
-    def start(self):
-        """_______________________."""
+    def start(self):  # pylint: disable=too-many-branches
+        """Composes a SSH runtime param command and prints successful authentications."""
         result = True
         try:
             self.child = pexpect.spawn(self._generate_ssh_runtime_param(), env={"TERM": "dumb"})
@@ -157,4 +157,5 @@ class TransferAgent(LoggerMixin):
             self.child.terminate()
             result = False
         finally:
+            # pylint complains: "return statement in finally block may swallow exception"
             return result

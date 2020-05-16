@@ -24,7 +24,7 @@
 #
 
 """
-Main code for bootstrapping minitoragent.
+Main code for bootstrapping agent.
 
 .. _Google Python Style Guide:
    http://google.github.io/styleguide/pyguide.html
@@ -58,9 +58,6 @@ __status__ = '''Development'''  # "Prototype", "Development", "Production".
 # Constant for Pexpect. This prompt is default for Fedora and CentOS.
 COMMAND_PROMPT = '[#$] '
 
-# Constants for agents or agent assistant
-LOCAL_AGENT_PORT = 44191  # local (forwarded) port on client that program uses to send instructions to agent
-
 # payload
 HTTP_RESPONSE = Schema({Required("result"): Any(True, False)})
 
@@ -69,17 +66,17 @@ class LoggerMixin:  # pylint: disable=too-few-public-methods
     """Contains a logger method for use by other classes."""
 
     def __init__(self):
-        logger_basename = '''agent'''
+        logger_basename = '''BootstrapAgent'''
         self._logger = logging.getLogger(f'{logger_basename}.{self.__class__.__name__}')
 
 
 class BootstrapAgent(LoggerMixin):
     """Responsible for executing the python agent module."""
 
-    def __init__(self, tunnel, deploy_path):
+    def __init__(self, tunnel, group_ports, deploy_path):
         super().__init__()
         self.tunnel = tunnel
-        self.local_port_agent = LOCAL_AGENT_PORT
+        self.local_port_agent = group_ports["local_port_agent"]
         self.host = '127.0.0.1'  # localhost, client
         self.deploy_path = deploy_path
         self.path_to_agent = os.path.join(self.deploy_path, 'agent.py')
@@ -100,7 +97,7 @@ class BootstrapAgent(LoggerMixin):
         """Determines whether the agent is listening thus active on target destination host."""
         http_code = 0
         result = False
-        self._logger.debug('checking if agent is alive by sending a GET request')
+        self._logger.debug('checking if Agent is alive by sending a GET request')
         try:
             with urllib.request.urlopen(f'http://{self.host}:{self.local_port_agent}',
                                         timeout=3, data=None) as request_obj:
@@ -108,24 +105,26 @@ class BootstrapAgent(LoggerMixin):
             if http_code == 200:
                 result = True
         except URLError:
-            self._logger.debug('agent could not be probed. '
-                               'probable cause: Machine unreachable or client has not connection to the Internet.')
+            self._logger.debug('Agent could not be probed. '
+                               'probable cause: intermediary or destination host unreachable or '
+                               'client has not connection to the Internet.')
             result = False
         except ConnectionResetError:
-            self._logger.debug('agent could not be probed. '
-                               'probable cause: minitoragent not bind to port or SSH process got killed')
+            self._logger.debug('Agent could not be probed. '
+                               'probable cause: Agent not bind to port or SSH process got killed')
             result = False
         except timeout:
-            self._logger.error('agent could not be probed. '
+            self._logger.error('Agent could not be probed. '
                                'timeout exceeded for the connection attempt. '
-                               'probable cause: Machine unreachable or client has not connection to the Internet')
+                               'probable cause: intermediary of destination host unreachable or '
+                               'client has not connection to the Internet')
             result = False
         finally:
             pass
         return result
 
     def _killing_process(self):
-        self._logger.debug('killing any running agent process(es), if present')
+        self._logger.debug('killing any running agent.py process(es), if present')
         command = f"pkill -f 'python {self.path_to_agent}'"
         self.tunnel.child.sendline(command)
         self.tunnel.child.expect(COMMAND_PROMPT)
@@ -145,23 +144,23 @@ class BootstrapAgent(LoggerMixin):
             if result:
                 self._logger.debug('agent has received instruction')
         except URLError:  # urllib.request.urlopen()
-            self._logger.error('agent could not be instructed. probable cause: '
-                               'Machine unreachable or client has not connection to the Internet')
+            self._logger.error('Agent could not be instructed. probable cause: '
+                               'host unreachable or client has not connection to the Internet')
             result = False
         except ConnectionResetError:  # urllib.request.urlopen()
-            self._logger.error('agent could not be instructed. probable cause: '
-                               'agent not bind to port')
+            self._logger.error('Agent could not be instructed. probable cause: '
+                               'Agent not bind to port')
             result = False
         except timeout:  # urllib.request.urlopen()
-            self._logger.error('agent could not be instructed. probably cause: '
+            self._logger.error('Agent could not be instructed. probably cause: '
                                'timeout exceeded for the connection attempt')
             result = False
         except json.decoder.JSONDecodeError:  # json.loads()
-            self._logger.error('response of agent could not be read, '
+            self._logger.error('response of Agent could not be read, '
                                'JSON document could not be deserialized')
             result = False
         except MultipleInvalid:  # HTTP_RESPONSE()
-            self._logger.error('response of agent could not be read. '
+            self._logger.error('response of Agent could not be read. '
                                'data structure validating failed ("MultipleInvalid")')
             result = False
         return result
@@ -172,41 +171,41 @@ class BootstrapAgent(LoggerMixin):
         index = self.tunnel.child.expect(['Python script', 'cannot open'])
         self.tunnel.child.expect(COMMAND_PROMPT)
         if index == 0:
-            self._logger.debug('module minitoragent.py is available on Machine')
+            self._logger.debug('module agent.py is available on Machine')
             result = True
         else:
-            self._logger.error('module minitoragent.py is not available on Machine')
+            self._logger.error('module agent.py is not available on Machine')
             result = False
         return result
 
     def stop_possible_running_agent(self):
         """Determines if agent.py module is still running on target destination host."""
         if self._probe_agent():
-            self._logger.debug('the agent is still running. trying to terminate gracefully...')
+            self._logger.debug('Agent is still running. trying to terminate gracefully...')
             self._stop_agent()
             while True:
-                # the minitoragent (or rather the OS) needs some time to free up socket, so check, wait, repeat, stop
+                # the Agent (or rather the OS) needs some time to free up socket, so check, wait, repeat, stop
                 command = f"pgrep -fc 'python {self.path_to_agent}'"
                 self.tunnel.child.sendline(command)
                 index = self.tunnel.child.expect(['0', '1', pexpect.TIMEOUT], timeout=3)
                 if index == 0:
                     break
                 sleep(1.2)  # the python process is still running, wait, and check again.
-            self._logger.debug('the process of agent has been terminated')
+            self._logger.debug('the process of Agent has been terminated')
         else:
-            self._logger.debug('there is no indicator of a running python process (for the agent)')
+            self._logger.debug('there is no indicator of a running python process (for Agent)')
             self._killing_process()  # to be absolutely sure
 
     def execute_agent(self):
         """Executes agent.py module on target destination host."""
         command = f'/bin/python3.6 {self.path_to_agent} {self.deploy_path}'
-        self._logger.debug('executing the agent module, command: %s', command)
+        self._logger.debug('executing the Agent module, command: %s', command)
         self.tunnel.child.sendline(command)
         index = self.tunnel.child.expect([COMMAND_PROMPT, 'SyntaxError', 'ModuleNotFoundError', 'AttributeError',
                                           'pid exists', pexpect.TIMEOUT], timeout=3)
         if index == 0:
             result = True
-            sleep(2)  # The minitoragent needs some time to initialize, so wait with returning the Boolean result
+            sleep(2)  # The Agent needs some time to initialize, so wait with returning the Boolean result
         elif index == 1:
             self._logger.error(
                 'check if Python version 3.6 is installed on destination host. '
@@ -214,18 +213,18 @@ class BootstrapAgent(LoggerMixin):
             result = False
         elif index == 4:
             self._logger.error(
-                'minitoragent.py could not be executed. '
+                'agent.py could not be executed. '
                 'it seems the Agent is running due to the existence of the '
                 'PID file. the command was: %s', command)
             result = False
         else:
             self._logger.error(
-                'minitoragent.py could not be executed. '
+                'agent.py could not be executed. '
                 'try running %s on destination host manually to determine the cause',
                 command)
             result = False
         return result
 
     def remove(self):
-        """Removes the python agent module (not implemented, yet)."""
+        """Removes the python Agent module (not implemented, yet)."""
         pass

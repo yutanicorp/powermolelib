@@ -35,6 +35,8 @@ NOTE: The Tunnel classes are responsible to purge the stream (ie. index in strea
 
 # from abc import ABC, abstractmethod
 import logging
+import threading
+from time import sleep
 import pexpect
 
 __author__ = '''Vincent Schouten <inquiry@intoreflection.co>'''
@@ -50,13 +52,6 @@ __status__ = '''Development'''  # "Prototype", "Development", "Production".
 # Constant for Pexpect. This prompt is default for Fedora and CentOS.
 COMMAND_PROMPT = '[#$] '
 
-# Constants, port numbers
-LOCAL_HEARTBEAT_PORT = 11600  # local port used by the heartbeat mechanism to communicate with agent (all modes)
-LOCAL_AGENT_PORT = 44191  # local (forwarded) used by program to send instructions to agent (all modes)
-LOCAL_COMMAND_PORT = 11800  # local port used by program to send linux commands to agent (only in INTERACTIVE mode)
-LOCAL_PROXY_PORT = 8080  # local port used to forward web traffic which exits destination host (only in TOR mode)
-LOCAL_TRANSFER_PORT = 11700  # local port used by minitor to upload files to destination host (only in FILE mode)
-
 
 class LoggerMixin:  # pylint: disable=too-few-public-methods
     """Contains a logger method for use by other classes."""
@@ -66,24 +61,27 @@ class LoggerMixin:  # pylint: disable=too-few-public-methods
         self._logger = logging.getLogger(f'{logger_basename}.{self.__class__.__name__}')
 
 
-class Tunnel(LoggerMixin):
-    """Establishes a connection to the target destination host via one or more intermediaries."""
+class Tunnel(LoggerMixin):  # pylint: disable=too-many-instance-attributes
+    """Establishes a connection to the target destination host via one or more intermediaries.
 
-    def __init__(self, path_ssh_cfg_minitor, mode, all_hosts, forward_connections=None):
+    Be aware, the child's buffer needs to be purged periodically. This can be done by invoking
+    periodically_purge_buffer(). As verbose mode is enabled for SSH (the child process), it
+    will slowly fill up the buffer, so this has to be taken care of. But don't invoke this
+    method before having start()'ed BootstrapAgent.
+    """
+
+    def __init__(self, path_ssh_cfg, mode, all_hosts, group_ports,  # pylint: disable=too-many-arguments
+                 forward_connections=None):
         """Initialize the Tunnel object."""
         super().__init__()
-        self.host_port_proxy_server = 44192
-        self.host_port_heartbeat_responder = 44193
-        self.host_port_file_server = 44194
-        self.host_port_command_server = 44195
-        self.host_port_agent = 44191
+        self.group_ports = group_ports
         self.forward_connections = forward_connections
         self.mode = mode
         self.all_hosts = all_hosts
+        self.path_ssh_cfg = path_ssh_cfg
         self.child = None
-        self.local_agent_port = LOCAL_AGENT_PORT
-        self.local_heartbeat_port = LOCAL_HEARTBEAT_PORT
-        self.path_ssh_cfg_minitor = path_ssh_cfg_minitor
+        self.thread = None
+        self.terminate = False
 
     def __str__(self):
         return 'Tunnel'
@@ -94,11 +92,14 @@ class Tunnel(LoggerMixin):
         if self.mode == 'FOR':
             var_param = f'{self.forward_connections} '
         elif self.mode == 'TOR':
-            var_param = f'-L{LOCAL_PROXY_PORT}:{last_host}:{self.host_port_proxy_server} '
+            var_param = f'-L{self.group_ports["local_port_proxy"]}:{last_host}:' \
+                        f'{self.group_ports["remote_port_proxy"]} '
         elif self.mode == 'INTERACTIVE':
-            var_param = f'-L{LOCAL_COMMAND_PORT}:{last_host}:{self.host_port_command_server} '
+            var_param = f'-L{self.group_ports["local_port_command"]}:{last_host}:' \
+                        f'{self.group_ports["remote_port_command"]} '
         elif self.mode == 'FILE':
-            var_param = f'-L{LOCAL_TRANSFER_PORT}:{last_host}:{self.host_port_file_server} '
+            var_param = f'-L{self.group_ports["local_port_transfer"]}:{last_host}:' \
+                        f'{self.group_ports["remote_port_transfer"]} '
 
         if len(self.all_hosts) == 2:
             order_of_hosts = f'{self.all_hosts[0]} {self.all_hosts[1]}'
@@ -113,16 +114,18 @@ class Tunnel(LoggerMixin):
                 else:
                     order_of_hosts += f' {host}'
 
-        runtime_param = f'ssh -v -F {self.path_ssh_cfg_minitor} ' \
-                        f'-L{LOCAL_AGENT_PORT}:{last_host}:{self.host_port_agent} ' \
-                        f'-L{LOCAL_HEARTBEAT_PORT}:{last_host}:{self.host_port_heartbeat_responder} '
+        runtime_param = f'ssh -v -F {self.path_ssh_cfg} ' \
+                        f'-L{self.group_ports["local_port_agent"]}:{last_host}:' \
+                        f'{self.group_ports["remote_port_agent"]} ' \
+                        f'-L{self.group_ports["local_port_heartbeat"]}:{last_host}:' \
+                        f'{self.group_ports["remote_port_heartbeat"]} '
         runtime_param += var_param
         runtime_param += f'-J {order_of_hosts}'
 
         self._logger.debug(runtime_param)
         return runtime_param
 
-    def start(self, debug=None):
+    def start(self, debug=None):  # pylint: disable=too-many-branches
         """Starts and controls SSH (child application) along with parameters.
 
         In addition, this method and mines for 'Authenticated' keywords, so
@@ -187,10 +190,12 @@ class Tunnel(LoggerMixin):
             self.child.terminate()
             result = False
         finally:
+            # pylint complains: "return statement in finally block may swallow exception"
             return result
 
     def stop(self):
         """Closes the tunnel essentially by terminating the program SSH."""
+        self.terminate = True
         if self.child.isalive():
             self._logger.debug('ssh is alive, terminating')
             self.child.terminate()
@@ -205,3 +210,13 @@ class Tunnel(LoggerMixin):
             self.child.readlines()
         except pexpect.ExceptionPexpect:
             pass
+
+    def periodically_purge_buffer(self):
+        """Purges the child's (SSH) output buffer due to buffer limitations."""
+        self.thread = threading.Thread(target=self._run_purger)
+        self.thread.start()
+
+    def _run_purger(self):
+        while not self.terminate:
+            self.child.expect([pexpect.TIMEOUT], timeout=0.2)
+            sleep(2)

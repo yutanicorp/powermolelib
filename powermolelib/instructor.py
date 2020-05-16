@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# File: agentassistant.py
+# File: instructor.py
 #
 # Copyright 2020 Vincent Schouten
 #
@@ -54,7 +54,7 @@ __email__ = '''<inquiry@intoreflection.co>'''
 __status__ = '''Development'''  # "Prototype", "Development", "Production".
 
 # This is the main prefix used for logging
-LOGGER_BASENAME = '''Assistant'''
+LOGGER_BASENAME = '''Instructor'''
 LOGGER = logging.getLogger(LOGGER_BASENAME)  # non-class objects like functions can consult this Logger object
 
 # Constant for Pexpect. This prompt is default for Fedora and CentOS.
@@ -65,33 +65,29 @@ HTTP_RESPONSE = Schema({Required("result"): Any(True, False)})
 
 
 class Assistant(ABC):
-    """Models an Assistant to interact with the agent residing on target destination host.
+    """Models an Assistant to interact with the Agent residing on target destination host.
 
-    Note: As the agent sits on top of target destination hosts' OS, many functions can be
+    Note: As the Agent sits on top of target destination hosts' OS, many functions can be
     performed more effective.
 
     """
 
-    def __init__(self, tunnel):
+    def __init__(self, group_ports):
         """Initializes the Assistant object."""
         logger_name = u'{base}.{suffix}'.format(base=LOGGER_BASENAME,
                                                 suffix=self.__class__.__name__)
-        self.host_port_proxy_server = tunnel.host_port_proxy_server
-        self.host_port_heartbeat_responder = tunnel.host_port_heartbeat_responder
-        self.host_port_file_server = tunnel.host_port_file_server
-        self.host_port_command_server = tunnel.host_port_command_server
-        self.host_port_agent = tunnel.host_port_agent
         self._logger = logging.getLogger(logger_name)
-        self.host = '127.0.0.1'  # if card of client
+        self.group_ports = group_ports
+        self.host = '127.0.0.1'  # if-card of client
 
     def __str__(self):
-        return 'Assistant'
+        return 'Instructor'
 
     def _send_instruction(self, instruction):
         json_instruction = json.dumps(instruction)  # serialize dict to a JSON formatted str
         data = json_instruction.encode('utf-8')  # encode JSON formatted string to byte
         try:
-            with urllib.request.urlopen(f'http://{self.host}:{self.host_port_agent}',
+            with urllib.request.urlopen(f'http://{self.host}:{self.group_ports["local_port_agent"]}',
                                         timeout=5,
                                         data=data) as request_obj:
                 response_string = request_obj.read().decode('utf-8')  # from byte to string (JSON format)
@@ -99,49 +95,49 @@ class Assistant(ABC):
             response = HTTP_RESPONSE(response_dict)  # validating the structure of the content of an HTTP request
             result = response.get('result')
         except URLError:  # urllib.request.urlopen()
-            self._logger.error('agent could not be instructed. probable cause: '
+            self._logger.error('Agent could not be instructed. probable cause: '
                                'host unreachable or client has not connection to the Internet')
             result = False
         except ConnectionResetError:  # urllib.request.urlopen()
-            self._logger.error('agent could not be instructed. probable cause: '
-                               'agent not bind to port')
+            self._logger.error('Agent could not be instructed. probable cause: '
+                               'Agent not bind to port')
             result = False
         except timeout:  # urllib.request.urlopen()
-            LOGGER.error('agent could not be instructed. probably cause: '
+            LOGGER.error('Agent could not be instructed. probably cause: '
                          'timeout exceeded for the connection attempt')
             result = False
         except json.decoder.JSONDecodeError:  # json.loads()
-            self._logger.error('response of agent could not be read, '
+            self._logger.error('response of Agent could not be read, '
                                'JSON document could not be deserialized')
             result = False
         except MultipleInvalid:  # HTTP_RESPONSE()
-            self._logger.error('response of agent could not be read. '
+            self._logger.error('response of Agent could not be read. '
                                'data structure validating failed ("MultipleInvalid")')
             result = False
         return result
 
-    def start_heartbeat_responder(self, machine_local_port):
-        """Starts the heartbeat responder."""
-        self._logger.debug('instructing the agent to start the heartbeat responder')
+    def _start_heartbeat_responder(self, machine_port):
+        """Sends the instruction to Agent to start the heartbeat responder."""
+        self._logger.debug('instructing Agent to start the heartbeat responder')
         result = self._send_instruction({'process': 'heartbeat_responder_start',
-                                         'arguments': {'local_port': machine_local_port}})
-        self._logger.debug('agent responded with: %s', result)
+                                         'arguments': {'local_port': machine_port}})
+        self._logger.debug('Agent responded with: %s', result)
         return result
 
-    def stop_heartbeat_responder(self):
-        """Stops the heartbeat responder."""
-        self._logger.debug('instructing the agent to stop the heartbeat responder')
+    def _stop_heartbeat_responder(self):
+        """Sends the instruction to Agent to stop the heartbeat responder."""
+        self._logger.debug('instructing Agent to stop the heartbeat responder')
         result = self._send_instruction({'process': 'heartbeat_responder_stop',
                                          'arguments': {}})
-        self._logger.debug('agent responded with: %s', result)
+        self._logger.debug('Agent responded with: %s', result)
         return result
 
     def stop_agent(self):
-        """Starts the agent."""
-        self._logger.debug('instructing agent to stop itself')
+        """Starts the Agent on destination host."""
+        self._logger.debug('instructing Agent to stop itself')
         result = self._send_instruction({'process': 'stop',
                                          'arguments': {}})
-        self._logger.debug('agent responded with: %s', result)
+        self._logger.debug('Agent responded with: %s', result)
         return result
 
     @abstractmethod
@@ -151,82 +147,86 @@ class Assistant(ABC):
 
     @abstractmethod
     def stop(self):
-        """Terminates the started program(s) and the agent on target destination host."""
+        """Terminates the started program(s) and the Agent on target destination host."""
         pass
 
 
 class ForAssistant(Assistant):
-    """Provides interaction with the agent, which resides on target destination host, to accommodate For mode.
+    """Provides interaction with the Agent, which resides on target destination host, to accommodate For mode.
 
     Functions:
     - interaction with the heartbeat responder
     - forwards connections ('local port forwarding')
     """
 
-    def __init__(self, tunnel):
+    def __init__(self, group_ports):
         """Initializes the ForAssistant object.
 
         Args:
-            tunnel (Tunnel): An instantiated Tunnel object.
+            group_ports (dict): A group of ports for powermole to bind on (localhost and target destination host)
 
         """
-        Assistant.__init__(self, tunnel)
+        Assistant.__init__(self, group_ports)
 
     def start(self):
         """Starts the heartbeat responder."""
-        return self.start_heartbeat_responder(machine_local_port=self.host_port_heartbeat_responder)
+        return self._start_heartbeat_responder(machine_port=self.group_ports["remote_port_heartbeat"])
 
     def stop(self):
-        """Terminates minitoragent on target destination host."""
-        return self.stop_agent()  # the agent will stop any running services including the heartbeat responder
+        """Terminates Agent on target destination host."""
+        return self.stop_agent()  # the Agent will stop any running services including the heartbeat responder
 
 
 class TorAssistant(Assistant):
-    """Provides interaction with the agent, which resides on target destination host, to accommodate Tor mode.
+    """Provides interaction with the Agent, which resides on target destination host, to accommodate Tor mode.
 
     Functions:
     - interaction with the heartbeat responder
     - proxify internet traffic
     """
 
-    def __init__(self, tunnel, ip_address_e):
+    def __init__(self, group_ports, ip_address_i, ip_address_e):
         """Initializes the TorAssistant object.
 
         Args:
-            tunnel (Tunnel): An instantiated Tunnel object.
-            ip_address_e (basestring): The IP address on host (on a possible different if) for outgoing connections.
+            group_ports (dict): A group of ports for powermole to bind on (localhost and target destination host)
+            ip_address_i (basestring): The IP address on host for incoming SOCKS encapsulated connections.
+            ip_address_e (basestring): The IP address on host (on a possible different ifcard) for outgoing connections.
 
         """
-        Assistant.__init__(self, tunnel)
+        Assistant.__init__(self, group_ports)
+        self.ip_address_i = ip_address_i
         self.ip_address_e = ip_address_e
 
-    def start_proxy_server(self, machine_local_port, if_address_e):
-        """Starts the proxy server."""
-        self._logger.debug('instructing the agent to start the proxy server')
+    def _start_proxy_server(self, remote_address_i, remote_port_i, remote_address_e):
+        """Sends an instruction to Agent to start the proxy server."""
+        self._logger.debug('instructing Agent to start the proxy server')
         result = self._send_instruction({'process': 'proxy_server_start',
-                                         'arguments': {'local_port': machine_local_port,
-                                                       'ip_address_e': if_address_e}})
-        self._logger.debug('agent responded with: %s', result)
+                                         'arguments': {'remote_address_i': remote_address_i,
+                                                       'remote_port_i': remote_port_i,
+                                                       'remote_address_e': remote_address_e}})
+        self._logger.debug('Agent responded with: %s', result)
         return result
 
-    def stop_proxy_server(self):
-        """Stops the proxy server."""
-        self._logger.debug('instructing the agent to stop the proxy server')
-        result = self._send_instruction({'process': 'proxy_server_stop',
-                                         'arguments': {}})
-        self._logger.debug('agent responded with: %s', result)
-        return result
+    # def stop_proxy_server(self):
+    #     """Sends an instruction to Agent to stop the proxy server."""
+    #     self._logger.debug('instructing Agent to stop the proxy server')
+    #     result = self._send_instruction({'process': 'proxy_server_stop',
+    #                                      'arguments': {}})
+    #     self._logger.debug('Agent responded with: %s', result)
+    #     return result
 
     def start(self):
         """Starts the SOCKS proxy and heartbeat responder."""
-        return all([self.start_proxy_server(machine_local_port=self.host_port_proxy_server,
-                                            if_address_e=self.ip_address_e),
-                    self.start_heartbeat_responder(
-                        machine_local_port=self.host_port_heartbeat_responder)])
+        return all([self._start_proxy_server(remote_address_i=self.ip_address_i,
+                                             remote_port_i=self.group_ports["remote_port_proxy"],
+                                             remote_address_e=self.ip_address_e),
+                    self._start_heartbeat_responder(
+                        machine_port=self.group_ports["remote_port_heartbeat"])])
 
     def stop(self):
-        """Terminates the started program(s) and the agent on target destination host."""
-        return self.stop_agent()  # the agent will stop any running services including the proxy server
+        """Terminates the started program(s) and the Agent on target destination host."""
+        return self.stop_agent()  # the Agent will stop any running services including the proxy server
 
 
 class InteractiveAssistant(Assistant):
@@ -237,42 +237,41 @@ class InteractiveAssistant(Assistant):
     - providing an interface
     """
 
-    def __init__(self, tunnel, local_command_port):
+    def __init__(self, group_ports):
         """Initializes the InteractiveAssistant object.
 
         Args:
-            tunnel (Tunnel): An instantiated Tunnel object.
-            local_command_port (basestring): <>
+            group_ports (dict): A group of ports for powermole to bind on (localhost and target destination host)
 
         """
-        Assistant.__init__(self, tunnel)
-        self.local_command_port = local_command_port
+        Assistant.__init__(self, group_ports)
 
     def start(self):
         """Performs authentication of the host and starts the heartbeat responder."""
-        return all([self._start_command_server(machine_local_port=self.host_port_command_server),
-                    self.start_heartbeat_responder(machine_local_port=self.host_port_heartbeat_responder)])
+        return all([self._start_command_server(machine_port=self.group_ports["remote_port_command"]),
+                    self._start_heartbeat_responder(
+                        machine_port=self.group_ports["remote_port_heartbeat"])])
 
     def stop(self):
-        """Terminates the started program(s) and the agent on target destination host."""
+        """Terminates the started program(s) and the Agent (on target destination host)."""
         # if self.probe_agent():
-        return self.stop_agent()  # the agent will stop any running services including the command server
+        return self.stop_agent()  # the Agent will stop any running services including the command server
 
-    def _start_command_server(self, machine_local_port):
+    def _start_command_server(self, machine_port):
         """Starts the command server."""
-        self._logger.debug('instructing the agent to start command server')
+        self._logger.debug('instructing Agent to start command server')
         result = self._send_instruction({'process': 'command_server_start',
-                                         'arguments': {'local_port': machine_local_port}})
-        self._logger.debug('agent responded with: %s', result)
+                                         'arguments': {'local_port': machine_port}})
+        self._logger.debug('Agent responded with: %s', result)
         return result
 
-    def _stop_command_server(self):
-        """Stops the command server."""
-        self._logger.debug('instructing the agent to stop command server')
-        result = self._send_instruction({'process': 'command_server_stop',
-                                         'arguments': {}})
-        self._logger.debug('agent responded with: %s', result)
-        return result
+    # def _stop_command_server(self):
+    #     """Stops the command server."""
+    #     self._logger.debug('instructing Agent to stop command server')
+    #     result = self._send_instruction({'process': 'command_server_stop',
+    #                                      'arguments': {}})
+    #     self._logger.debug('Agent responded with: %s', result)
+    #     return result
 
     def exec_command(self, command):
         """Executes Linux command and returns the response in a byte list."""
@@ -282,72 +281,70 @@ class InteractiveAssistant(Assistant):
         try:
             command_json = json.dumps({'command': command})  # serialize dict to a JSON formatted str
             command_byte = command_json.encode('utf-8')  # encode JSON formatted string to byte
-            with urllib.request.urlopen(f'http://{self.host}:{self.local_command_port}',
+            with urllib.request.urlopen(f'http://{self.host}:{self.group_ports["local_port_command"]}',
                                         timeout=5, data=command_byte) as request_obj:
                 # response = request_obj.read().decode('utf-8')  # from byte to string
                 response = request_obj.read()
         except URLError:
             self._logger.error('URLError. '
-                               'HTTP request could not be send over forwarded connection to agent. '
-                               'probable cause: Machine unreachable or client has not connection to the Internet')
+                               'HTTP request could not be send over forwarded connection to Agent. '
+                               'probable cause: host unreachable or client has not connection to the Internet')
             response = False
         except ConnectionResetError:
             self._logger.error('ConnectionResetError. '
-                               'HTTP request could not be send over forwarded connection to agent. '
-                               'probable cause: agent not bind to port')
+                               'HTTP request could not be send over forwarded connection to Agent. '
+                               'probable cause: Agent not bind to port')
             response = False
         except timeout:
-            LOGGER.error('HTTP request could not be send over forwarded connection to agent. '
+            LOGGER.error('HTTP request could not be send over forwarded connection to Agent. '
                          'timeout exceeded for the connection attempt. '
-                         'probable cause: Machine unreachable or client has not connection to the Internet')
+                         'probable cause: host unreachable or client has not connection to the Internet')
             response = False
         return response
 
 
 # this class need a redesign!
 class FileAssistant(Assistant):
-    """Provides interaction with the agent, which resides on target destination host, to accommodate File mode.
+    """Provides interaction with Agent, which resides on target destination host, to accommodate File mode.
 
     Functions:
     - interaction with the heartbeat responder
     - transfer files.
     """
 
-    def __init__(self, tunnel, local_transfer_port):
+    def __init__(self, group_ports):
         """Initializes the FileAssistant object.
 
         Args:
-            tunnel (Tunnel): An instantiated Tunnel object.
-            local_transfer_port (basestring): <>
+            group_ports (dict): A group of ports for powermole to bind on (localhost and target destination host)
 
         """
-        Assistant.__init__(self, tunnel)
+        Assistant.__init__(self, group_ports)
         self.metadata_files = None
-        self.local_transfer_port = local_transfer_port
         self.file_client = None
 
-    def _start_file_server(self, machine_local_port):
+    def _start_file_server(self, machine_port):
         """Starts the file server."""
-        self._logger.debug('instructing the minitoragent to start file server')
+        self._logger.debug('instructing Agent to start file server')
         result = self._send_instruction({'process': 'file_server_start',
-                                         'arguments': {'local_port': machine_local_port}})
-        self._logger.debug('minitoragent responded with: %s', result)
+                                         'arguments': {'local_port': machine_port}})
+        self._logger.debug('Agent responded with: %s', result)
         return result
 
     def _stop_file_server(self):
         """Stops the file server."""
-        self._logger.debug('instructing the minitoragent to stop file server')
+        self._logger.debug('instructing Agent to stop file server')
         result = self._send_instruction({'process': 'file_server_stop',
                                          'arguments': {}})
         if result:
-            self._logger.debug('agent has received instruction')
+            self._logger.debug('Agent has received instruction')
         return result
 
     def start(self):
         """Starts the heartbeat responder and transfers files."""
-        if all([self.start_heartbeat_responder(machine_local_port=self.host_port_heartbeat_responder),
-                self._start_file_server(machine_local_port=self.host_port_file_server)]):
-            self.file_client = FileClient(local_transfer_port=self.local_transfer_port)
+        if all([self._start_heartbeat_responder(machine_port=self.group_ports["remote_port_heartbeat"]),
+                self._start_file_server(machine_port=self.group_ports["remote_port_transfer"])]):
+            self.file_client = FileClient(local_transfer_port=self.group_ports["local_port_transfer"])
             return self.file_client.start()
         return False
 
@@ -358,21 +355,21 @@ class FileAssistant(Assistant):
             #  {'source': '/home/pic2.jpg', 'destination': '/tmp'}]
             self.file_client.transfer(file.get('source'), file.get('destination'))
         # the sleep() should be removed and this class should be improved dramatically
-        # as soon as the upload has been completed, it sends a terminate signal to agent
-        # if the agent is still busy processing the data of the uploaded files
+        # as soon as the upload has been completed, it sends a terminate signal to Agent
+        # if the Agent is still busy processing the data of the uploaded files
         # it cannot terminates itself successfully and thus the process will stay active
-        # with sleep and a magic number the agent gets sufficient time (to be refactored)
+        # with sleep and a magic number the Agent gets sufficient time (to be refactored)
         sleep(2)
         self._logger.info('the files are successfully transferred')
         return True
 
     def stop(self):
-        """Terminates the started program(s) and the agent on target destination host."""
+        """Terminates the started program(s) and the Agent on target destination host."""
         return all([self.file_client.stop(), self.stop_agent()])
 
 
 class FileClient:  # THIS CLASS HAS TO BE MERGED WITH FILE ASSISTANT !!!
-    """Sends files to file server (ie. agent) residing on the target destination host.
+    """Sends files to file server (ie. Agent) residing on the target destination host.
 
     Exclusively used by FileAssistant().
 
@@ -398,7 +395,7 @@ class FileClient:  # THIS CLASS HAS TO BE MERGED WITH FILE ASSISTANT !!!
         self.socket_.close()
 
     def transfer(self, source, destination):
-        """Opens the sockets, connects to file server (ie. agent) on Machine, and sends file(s)."""
+        """Opens the sockets, connects to file server (ie. Agent) on Machine, and sends file(s)."""
         data_protocol = DataProtocol()
         file_name = basename(source)
         path_src = dirname(source)
@@ -417,7 +414,7 @@ class FileClient:  # THIS CLASS HAS TO BE MERGED WITH FILE ASSISTANT !!!
             self._logger.error('file or directory is requested but does not exist')
         return True
 
-    def _send_file(self,   # pylint: disable=too-many-arguments
+    def _send_file(self,  # pylint: disable=too-many-arguments
                    path_src,
                    file_name,
                    file_name_bin,
