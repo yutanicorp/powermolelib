@@ -164,7 +164,7 @@ class Tunnel(LoggerMixin):  # pylint: disable=too-many-instance-attributes
                 elif index == 2:
                     self._logger.debug('there where no failed login attempts')
                 elif index == 3:
-                    self._logger.error('socket error. probable cause: SSH service on proxy or target machine disabled')
+                    self._logger.error('socket error. probable cause: ssh service on proxy or target machine disabled')
                     self.child.terminate()
                     result = False
                 elif index == 4:
@@ -175,11 +175,11 @@ class Tunnel(LoggerMixin):  # pylint: disable=too-many-instance-attributes
                     self._logger.warning('warning: hostname automatically added to list of known hosts')
                     self.child.sendline('yes')
                 elif index == 6:
-                    self._logger.error('SSH could not connect to %s', hostname)
+                    self._logger.error('ssh could not connect to %s', hostname)
                     self.child.terminate()
                     result = False
                 elif index == 7:
-                    self._logger.error('TIMEOUT exception was thrown. SSH could probably not connect to %s', hostname)
+                    self._logger.error('TIMEOUT exception was thrown. ssh could probably not connect to %s', hostname)
                     self.child.terminate()
                     result = False
                 else:
@@ -187,7 +187,7 @@ class Tunnel(LoggerMixin):  # pylint: disable=too-many-instance-attributes
                     result = False
             self.child.expect(COMMAND_PROMPT)
         except pexpect.exceptions.ExceptionPexpect:
-            self._logger.error('EOF is read; SSH has exited abnormally')
+            self._logger.error('EOF is read; ssh has exited abnormally')
             self.child.terminate()
             result = False
         finally:

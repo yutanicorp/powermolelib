@@ -73,7 +73,7 @@ class Instructor(ABC):
     """
 
     def __init__(self, group_ports):
-        """Initializes the Assistant object."""
+        """Initializes the Instructor object."""
         logger_name = u'{base}.{suffix}'.format(base=LOGGER_BASENAME,
                                                 suffix=self.__class__.__name__)
         self._logger = logging.getLogger(logger_name)
@@ -160,7 +160,7 @@ class ForInstructor(Instructor):
     """
 
     def __init__(self, group_ports):
-        """Initializes the ForAssistant object.
+        """Initializes the ForInstructor object.
 
         Args:
             group_ports (dict): A group of ports for powermole to bind on (localhost and target destination host)
@@ -186,7 +186,7 @@ class TorInstructor(Instructor):
     """
 
     def __init__(self, group_ports, ip_address_i, ip_address_e):
-        """Initializes the TorAssistant object.
+        """Initializes the TorInstructor object.
 
         Args:
             group_ports (dict): A group of ports for powermole to bind on (localhost and target destination host)
@@ -238,7 +238,7 @@ class InteractiveInstructor(Instructor):
     """
 
     def __init__(self, group_ports):
-        """Initializes the InteractiveAssistant object.
+        """Initializes the InteractiveInstructor object.
 
         Args:
             group_ports (dict): A group of ports for powermole to bind on (localhost and target destination host)
@@ -313,7 +313,7 @@ class FileInstructor(Instructor):
     """
 
     def __init__(self, group_ports):
-        """Initializes the FileAssistant object.
+        """Initializes the FileInstructor object.
 
         Args:
             group_ports (dict): A group of ports for powermole to bind on (localhost and target destination host)
@@ -371,7 +371,7 @@ class FileInstructor(Instructor):
 class FileClient:  # THIS CLASS HAS TO BE MERGED WITH FILE ASSISTANT !!!
     """Sends files to file server (ie. Agent) residing on the target destination host.
 
-    Exclusively used by FileAssistant().
+    Exclusively used by FileInstructor().
 
     """
 

@@ -128,7 +128,7 @@ class TransferAgent(LoggerMixin):
                 elif index == 2:
                     self._logger.debug('there where no failed login attempts')
                 elif index == 3:
-                    self._logger.error('socket error. probable cause: SSH service on proxy or target machine disabled')
+                    self._logger.error('socket error. probable cause: scp service on proxy or target machine disabled')
                     self.child.terminate()
                     result = False
                 elif index == 4:
@@ -139,13 +139,13 @@ class TransferAgent(LoggerMixin):
                     self._logger.warning('warning: hostname automatically added to list of known hosts')
                     self.child.sendline('yes')
                 elif index == 6:
-                    self._logger.error('ssh could not connect to %s', hostname)
+                    self._logger.error('scp could not connect to %s', hostname)
                     self.child.terminate()
                     result = False
                 elif index == 7:
                     pass
                 elif index == 8:
-                    self._logger.error('TIMEOUT exception was thrown. ssh could probably not connect to %s', hostname)
+                    self._logger.error('TIMEOUT exception was thrown. scp could probably not connect to %s', hostname)
                     self.child.terminate()
                     result = False
                 else:
@@ -153,7 +153,9 @@ class TransferAgent(LoggerMixin):
                     result = False
             self.child.expect(pexpect.EOF)  # the buffer has to be 'read' continuously, otherwise Pexpect deteriorates
         except pexpect.exceptions.ExceptionPexpect:
-            self._logger.error('EOF is read; ssh has exited abnormally')
+            self._logger.error('EOF is read; scp has exited abnormally.')
+            self._logger.error('scp versions released after 21 Apr 2020 breaks when using the '
+                               'ProxyJump directive. starting investigating soon...')
             self.child.terminate()
             result = False
         finally:
