@@ -43,3 +43,9 @@ History
 ------------------
 
 * Assistant() renamed to Instructor() and start() of transferagent modified (due to bugfix: the agent module could never be copied successfully)
+
+
+2.0.1 (04-07-2020)
+------------------
+
+* scp versions released after 21 Apr 2020 breaks when using the ProxyJump directive. this error is shown during execution of powermole when user has a newer scp installed. at this moment no solution how to deal with this issue.
