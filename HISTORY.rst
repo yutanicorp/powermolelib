@@ -49,3 +49,9 @@ History
 ------------------
 
 * scp versions released after 21 Apr 2020 breaks when using the ProxyJump directive. this error is shown during execution of powermole when user has a newer scp installed. at this moment no solution how to deal with this issue.
+
+
+2.1.0 (04-07-2020)
+------------------
+
+* bug fixed: powermole crashed when using 1 intermediary host
