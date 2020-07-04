@@ -87,12 +87,13 @@ class TransferAgent(LoggerMixin):
 
     def _generate_ssh_runtime_param(self):
         last_host = self.all_hosts[-1]
-        if len(self.all_hosts) == 1:
-            order_of_hosts = f'{self.all_hosts[0]}'
-        else:
+        if len(self.all_hosts) == 2:  # gateway + destination host
             # the result will be something in this format:
-            # scp -F {} -o 'ProxyJump machine1' /home/vincent/Pictures/andy_apollo_imdb.jpg machine2:/tmp
-            # scp -F {} -o 'ProxyJump machine1,machine2' /home/vincent/Pictures/andy_apollo_imdb.jpg machine3:/tmp
+            # scp -F {} -o 'ProxyJump 10.10.1.72' /home/vincent/Pictures/andy_apollo_imdb.jpg 10.10.2.92:/tmp
+            order_of_hosts = f'{self.all_hosts[0]}'
+        else:  # more than one gateway + destination host
+            # the result will be something in this format:
+            # scp -F {} -o 'ProxyJump 10.10.1.72,10.10.2.92' /home/vincent/Pictures/andy_apollo_imdb.jpg 10.10.3.82:/tmp
             order_of_hosts = ''
             for i, host in enumerate(self.all_hosts):
                 if i == 0:
@@ -154,8 +155,6 @@ class TransferAgent(LoggerMixin):
             self.child.expect(pexpect.EOF)  # the buffer has to be 'read' continuously, otherwise Pexpect deteriorates
         except pexpect.exceptions.ExceptionPexpect:
             self._logger.error('EOF is read; scp has exited abnormally.')
-            self._logger.error('scp versions released after 21 Apr 2020 breaks when using the '
-                               'ProxyJump directive. starting investigating soon...')
             self.child.terminate()
             result = False
         finally:
