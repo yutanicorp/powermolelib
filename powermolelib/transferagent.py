@@ -98,8 +98,10 @@ class TransferAgent(LoggerMixin):
             for i, host in enumerate(self.all_hosts):
                 if i == 0:
                     order_of_hosts += f'{host}'
-                else:
+                elif i < len(self.all_hosts) - 1:
                     order_of_hosts += f',{host}'
+                # else:
+                #     order_of_hosts += f',{host}'
 
         runtime_param = f"scp -v -F {self.path_ssh_cfg_minitor} -o 'ProxyJump {order_of_hosts}' " \
                         f"{self._path_to_agent_module} "
@@ -111,7 +113,7 @@ class TransferAgent(LoggerMixin):
         """Composes a SSH runtime param command and prints successful authentications."""
         result = True
         try:
-            self.child = pexpect.spawn(self._generate_ssh_runtime_param(), env={"TERM": "dumb"})
+            self.child = pexpect.spawn(self._generate_ssh_runtime_param(), env={"TERM": "dumb"}, timeout=2)
             # self.process.setecho(False)  # doesn't seem to have effect
             # self.process.waitnoecho()  # doesn't seem to have effect
             self._logger.debug('going through the stream to match patterns')
