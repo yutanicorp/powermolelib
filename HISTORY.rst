@@ -55,3 +55,9 @@ History
 ------------------
 
 * bug fixed: powermole crashed when using 1 intermediary host
+
+
+2.2.0 (04-07-2020)
+------------------
+
+* bug fixed: program didn't work using >1 intermediary hosts
