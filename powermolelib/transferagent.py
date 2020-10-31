@@ -113,7 +113,7 @@ class TransferAgent(LoggerMixin):
         """Composes a SSH runtime param command and prints successful authentications."""
         result = True
         try:
-            self.child = pexpect.spawn(self._generate_ssh_runtime_param(), env={"TERM": "dumb"}, timeout=2)
+            self.child = pexpect.spawn(self._generate_ssh_runtime_param(), env={"TERM": "dumb"}, timeout=10)
             # self.process.setecho(False)  # doesn't seem to have effect
             # self.process.waitnoecho()  # doesn't seem to have effect
             self._logger.debug('going through the stream to match patterns')

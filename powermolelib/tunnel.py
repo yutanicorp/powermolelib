@@ -142,7 +142,7 @@ class Tunnel(LoggerMixin):  # pylint: disable=too-many-instance-attributes
         try:
             if debug:
                 self.child = pexpect.spawn(self._generate_ssh_runtime_param(), env={"TERM": "dumb"}, encoding='utf-8',
-                                           timeout=None)
+                                           timeout=10)
             else:
                 self.child = pexpect.spawn(self._generate_ssh_runtime_param(), env={"TERM": "dumb"}, encoding='utf-8')
             # setecho() doesn't seem to have effect.

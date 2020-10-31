@@ -110,7 +110,7 @@ FILE_SCHEMA = Schema({"mode": "FILE",
 
 
 class Configuration:  # pylint: disable=too-few-public-methods, too-many-instance-attributes
-    """Parses the configuration file."""
+    """Parses the configuration file and composes the local forwarding string (SSH -L)."""
 
     def __init__(self, config_file):
         """Initializes the Configuration object.
@@ -141,12 +141,13 @@ class Configuration:  # pylint: disable=too-few-public-methods, too-many-instanc
             forwarders = config.get('forwarders')
             # ex. [{'local_port': 587, 'remote_port': 587}, {'local_port': 995, 'remote_port': 995}]
             self.forwarders_string = ' '.join([f'-L:{forwarder["local_port"]}:'
-                                               # f'{self.destination["host_ip"]}:'
-                                               f'{forwarder["remote_interface"]}:'
+                                               # IPv6 addresses should be enclosed in single quotes on MacOS'
+                                               f'\'{forwarder["remote_interface"]}\':'
                                                f'{forwarder["remote_port"]}' for forwarder in
                                                forwarders]) if forwarders else ''
             self.forwarders_ports = ', '.join([str(forwarder["local_port"])
                                                for forwarder in forwarders]) if forwarders else ''
+            # ex. 587, 995
             self.all_hosts = [gateway["host_ip"] for gateway in self.gateways]
             self.all_hosts.append(self.destination["host_ip"])
             # ex. ['10.10.1.72', '10.10.2.92']
