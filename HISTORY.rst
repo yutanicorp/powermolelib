@@ -61,3 +61,9 @@ History
 ------------------
 
 * bug fixed: program didn't work using >1 intermediary hosts
+
+
+2.2.1 (31-10-2020)
+------------------
+
+* forwardering string enclosed with quotes (for IPv6), timeout for establishing SSH conn. increased to 10s, requirements updated for prospector
