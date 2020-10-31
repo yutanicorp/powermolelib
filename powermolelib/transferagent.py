@@ -75,7 +75,6 @@ class TransferAgent(LoggerMixin):
 
     def create_ssh_config(self):
         """______________."""
-        pass
 
     @property
     def _path_to_agent_module(self):

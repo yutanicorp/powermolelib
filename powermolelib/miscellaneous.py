@@ -313,11 +313,11 @@ def start_application(binary_name, binary_location):  # used in either FOR (w/ T
 
 def start_ping(local_heartbeat_port):
     """Sends a HTTP GET request and processes the response."""
-    local_heartbeat_port = local_heartbeat_port
+    heartbeat_port = local_heartbeat_port
     http_code = 0
     result = None
     try:
-        with urllib.request.urlopen(f'http://localhost:{local_heartbeat_port}', timeout=2, data=None) as request_obj:
+        with urllib.request.urlopen(f'http://localhost:{heartbeat_port}', timeout=2, data=None) as request_obj:
             http_code = request_obj.getcode()
     except (URLError, ConnectionResetError):
         LOGGER.debug('Agent did not respond to GET request. '

@@ -143,12 +143,10 @@ class Instructor(ABC):
     @abstractmethod
     def start(self):
         """Starts the necessary programs on target destination host."""
-        pass
 
     @abstractmethod
     def stop(self):
         """Terminates the started program(s) and the Agent on target destination host."""
-        pass
 
 
 class ForInstructor(Instructor):

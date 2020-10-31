@@ -146,7 +146,7 @@ class Agent(LoggerMixin):
             _logger = logging.getLogger(logger_name)
             socketserver.TCPServer.allow_reuse_address = True
 
-            def do_POST(self):  # pylint: disable=invalid-name
+            def do_POST(self):
                 """Creates the response."""
                 try:
                     data = self.rfile.read(int(self.headers['Content-Length']))  # b'{"process":"heartbeat_responder"}

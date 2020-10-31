@@ -227,4 +227,4 @@ class BootstrapAgent(LoggerMixin):
 
     def remove(self):
         """Removes the python Agent module (not implemented, yet)."""
-        pass
+        # pass
