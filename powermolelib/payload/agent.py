@@ -327,19 +327,18 @@ class SocketServer(LoggerMixin):
         self.connections = []
 
     def create_socket(self):
-        """Creates a new INET (IPv4), STREAMing socket (TCP)."""
+        """Creates a new INET (IPv4), STREAMing socket (TCP).
+
+        Sockets are interior endpoints built for sending and receiving data.
+
+        """
         try:
             self.socket_ = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         except socket.error as err:
             self._logger.debug("failed to create socket: %s", err)
 
-    def create_socket_and_listen(self, port, host='localhost'):
-        """Creates a new INET, STREAMing socket and listens for connections made to the socket."""
-        try:
-            self.socket_ = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        except socket.error as err:
-            self._logger.debug("failed to create socket: %s", err)
-        # sockets are interior endpoints built for sending and receiving data.
+    def listen(self, port, host='localhost'):
+        """Listens for connections made to the socket."""
         self.socket_.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         # to avoid "Address already in use" error, set the SO_REUSEADDR flag.
         # this tells the kernel o reuse a local socket in TIME_WAIT state,
@@ -424,7 +423,8 @@ class DataProtocol(SocketServer):  # Costas, LoggerMixin is subclassed by Socket
     def start(self):
         """Starts the data protocol in either receiving of sending mode."""
         if self.mode == 'receive':
-            self.create_socket_and_listen(self.port)
+            self.create_socket()
+            self.listen(self.port)
             self.handle_connections()
         elif self.mode == 'send':
             self.create_socket()
@@ -834,7 +834,8 @@ class ProxyServer(LoggerMixin):
     def start(self):
         """Starts the SOCKS proxy server."""
         self._logger.debug('starting SOCKS proxy server...')
-        self.socket_server.create_socket_and_listen(self.inbound_port, self.inbound_address)
+        self.socket_server.create_socket()
+        self.socket_server.listen(self.inbound_port, self.inbound_address)
         self.socket_server.handle_connections()
         threading.Thread(target=self._thread_main_method_per_conn).start()
         return True
