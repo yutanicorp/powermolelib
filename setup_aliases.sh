@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # Needs to be sourced
-# Sets up alias functions for the interface while keeping backwards compatibility with the old bash type
+# Sets  up alias functions for the interface while keeping backwards compatibility with the old bash type
 
 for command in $(ls _CI/scripts/ | cut -d'.' -f1 | grep -v "^_")
 do

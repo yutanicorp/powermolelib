@@ -40,7 +40,7 @@ setup(
     install_requires=requirements,
     license='MIT',
     zip_safe=False,
-    keywords='''powermole powermolelib ssh proxyjump hosts forwarding tor''',
+    keywords='''powermole powermolelib ssh proxyjump hosts forwarding tor privacy''',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
