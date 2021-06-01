@@ -244,12 +244,13 @@ class Heartbeat(LoggerMixin):  # context manager
     by this class. Consequently, this exception will stop the monitoring.
     """
 
-    def __init__(self, local_heartbeat_port):
+    def __init__(self, local_heartbeat_port, heartbeat_interval=10):
         super().__init__()
         self.thread = None
         self.is_tunnel_intact = True
         self.terminate = False
         self.local_heartbeat_port = local_heartbeat_port
+        self.heartbeat_interval = heartbeat_interval
 
     def _run_heartbeat(self):
         while self.thread.is_alive:
@@ -260,17 +261,17 @@ class Heartbeat(LoggerMixin):  # context manager
                 self._logger.debug('heartbeat signal was successfully returned')
             else:
                 self._logger.error('heartbeat signal was not returned')
-            sleep(HEARTBEAT_DURATION)
+            sleep(self.heartbeat_interval)
 
     def __enter__(self):
         self.thread = threading.Thread(target=self._run_heartbeat)
         self.thread.start()
-        self._logger.info('heartbeat mechanism started')  # necessary to have log level "info"?
+        self._logger.info('heartbeat mechanism started')  # is it a valid log level?
         return self
 
     def __exit__(self, type_, value, traceback):
         self.terminate = True
-        self._logger.info('heartbeat mechanism stopped')  # necessary to have log level "info"?
+        self._logger.info('heartbeat mechanism stopped')  # is it a valid log level?
 
 
 def start_application(binary_name, binary_location):  # used in either FOR (w/ Thunderbird) or TOR mode (w/ Firefox)
