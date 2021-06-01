@@ -868,11 +868,11 @@ class ProxyServer(LoggerMixin):
         self._logger.debug("start SOCKS subnegotiation")
         if Subnegotiation(connection).start():
             self._logger.debug("start handling SOCKS request and forward data")
-            Communicate(connection, self.outbound_address, self.should_terminate).start()
+            RequestHandler(connection, self.outbound_address, self.should_terminate).start()
 
 
-class Communicate(LoggerMixin):
-    """Handles SOCKS requests from client, sends replies and forwards data."""
+class RequestHandler(LoggerMixin):
+    """Receives DST.ADDR from client ("request"), responds with BND.ADDR ("reply"), and forwards data."""
 
     def __init__(self,
                  connection,
@@ -930,11 +930,10 @@ class Communicate(LoggerMixin):
             self.connection.close()  # pay attention to this one!
             self._logger.debug("something went wrong: %s", exp)
             return None
-        if (
-            s5_request[0:1] != VER or
-            s5_request[1:2] != CMD_CONNECT or
-            s5_request[2:3] != b'\x00'
-        ):
+        conditions = [s5_request[0:1] != VER,
+                      s5_request[1:2] != CMD_CONNECT,
+                      s5_request[2:3] != b'\x00']
+        if any(conditions):
             return None
         # IPV4
         if s5_request[3:4] == ATYP_IPV4:
