@@ -109,3 +109,9 @@ History
 ------------------
 
 * Add parameter deploy path for the transfer agent logic, refactor (and fix) SOCKS proxy server code, rename (API) parameters, and add docstrings
+
+
+3.3.0 (01-06-2021)
+------------------
+
+* Add code to give an argument for heartbeat frequency, rename class name, and refactor SOCKS code
