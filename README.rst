@@ -26,7 +26,7 @@ How it works
 
 Terminology
 -----------
-* **Tunnel** is an established connection from localhost to the target destination host through intermediate hosts (called Gateways).
+* **Tunnel** is an established connection from localhost to the target destination host through intermediate hosts (called gateways).
 * **Agent** is a python module running on the target destination host. It performs various functions.
 * **Instructor** sends instructions to the *Agent* by utilizing a forwarded connection provided by *Tunnel*.
 
@@ -40,7 +40,7 @@ Through port forwarding, the program can communicate with the agent on the last 
 .. image:: ../img/illustration_how_it_works_2.png
 
 
-The Instructor in conjuction with the Agent provides two modes:
+The Instructor in conjunction with the Agent provides two modes:
 
 * TOR mode
 * FOR(warding) mode
@@ -51,13 +51,8 @@ Regardless which mode is enabled, several options are presented when the the tun
 * TRANSFER: this options allows selected files to be transferred to the target destination host.
 
 
-See `cli <https://github.com/yutanicorp/powermolecli>`_ package for applications (uses).
+See `cli <https://github.com/yutanicorp/powermolecli>`_ or `gui <https://github.com/yutanicorp/powermolegui>`_ packages for implementation.
 
-Logging
-=======
-
-Consult the log file in /tmp on destination host when the bootstrap process of the Agent fails.
-In addition, consider to start powermolecli with log-level = 'debug'.
 
 Development Workflow
 ====================
