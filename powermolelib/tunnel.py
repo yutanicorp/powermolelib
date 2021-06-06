@@ -161,6 +161,7 @@ class Tunnel(LoggerMixin):  # pylint: disable=too-many-instance-attributes
                 index = self.child.expect(
                     [f'Authenticated to {hostname}', 'Last failed login:', 'Last login:', 'socket error',
                      'not accessible', 'fingerprint', 'open failed: connect failed:', pexpect.TIMEOUT])
+                result = False  # reset var as this var could be set True in a previous iteration, we want fresh start
                 if index == 0:
                     self._logger.info('authenticated to %s', hostname)  # logger level is "info" to inform user
                     self.authenticated_hosts.append(hostname)
@@ -174,18 +175,22 @@ class Tunnel(LoggerMixin):  # pylint: disable=too-many-instance-attributes
                 elif index == 3:
                     self._logger.error('socket error. probable cause: SSH service on proxy or target machine disabled')
                     self.child.terminate()
+                    break
                 elif index == 4:
                     self._logger.error('the identity file is not accessible')
                     self.child.terminate()
+                    break
                 elif index == 5:
                     self._logger.warning('warning: hostname automatically added to list of known hosts')
                     self.child.sendline('yes')  # security issue
                 elif index == 6:
                     self._logger.error('SSH could not connect to %s', hostname)
                     self.child.terminate()
+                    break
                 elif index == 7:
                     self._logger.error('TIMEOUT exception was thrown. SSH could probably not connect to %s', hostname)
                     self.child.terminate()
+                    break
                 else:
                     self._logger.error('unknown state reached')
             self.child.expect(COMMAND_PROMPT)
