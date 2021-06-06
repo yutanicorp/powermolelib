@@ -115,3 +115,9 @@ History
 ------------------
 
 * Add feature to set heartbeat interval, refactor SOCKS code
+
+
+3.3.1 (06-06-2021)
+------------------
+
+* Fix bug to avoid crashing when unable to connect, reword paragraph in README, reword commit messages in HISTORY.RST, reword list of keywords for PyPi
