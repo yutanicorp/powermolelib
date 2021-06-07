@@ -297,17 +297,8 @@ def start_ping(local_heartbeat_port):
     try:
         with urllib.request.urlopen(f'http://localhost:{heartbeat_port}', timeout=2, data=None) as request_obj:
             http_code = request_obj.getcode()
-    except (URLError, ConnectionResetError):
-        LOGGER.debug('Agent did not respond to GET request. '
-                     'probable cause: gateways or destination host unreachable, '
-                     'localhost (client) has no connection to the Internet, or '
-                     'Agent on destination host is not bind to local port.')
-        result = False
-    except timeout:  # this exception needed?
-        LOGGER.debug('Agent did not respond to GET request in a timely fashion.'
-                     'probable cause: gateways or destination host unreachable, '
-                     'localhost (client) has no connection to the Internet, or '
-                     'Agent on destination host is not bind to local port.')
+    except (URLError, ConnectionResetError, timeout) as exp:
+        LOGGER.debug('sending GET request to Agent raised an error: %s', exp)
         result = False
     if http_code == 200:
         result = True
