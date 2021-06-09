@@ -110,12 +110,8 @@ class BootstrapAgent(LoggerMixin):
                 if http_code == 200:
                     self._logger.debug('Agent is alive')
                     result = True
-        except ConnectionResetError as exp:
+        except (ConnectionResetError, URLError, timeout) as exp:
             self._logger.debug('sending request raised an error: %s', exp)
-        except URLError as exp:
-            self._logger.debug('sending request raised an error: %s', exp)
-        except timeout:
-            self._logger.debug('timeout exceeded when instructing the Agent')
         return result
 
     def _remove_remnants(self):
@@ -171,12 +167,8 @@ class BootstrapAgent(LoggerMixin):
             if result:
                 self._logger.debug('Agent has received instruction to stop')
                 result = True
-        except URLError as exp:  # urllib.request.urlopen()
+        except (ConnectionResetError, URLError, timeout) as exp:  # urllib.request.urlopen()
             self._logger.debug('instructing the Agent raised an error: %s', exp)
-        except ConnectionResetError as exp:  # urllib.request.urlopen()
-            self._logger.debug('instructing the Agent raised an error: %s', exp)
-        except timeout:  # urllib.request.urlopen()
-            self._logger.debug('timeout exceeded when instructing the Agent')
         except json.decoder.JSONDecodeError:  # json.loads()
             self._logger.error('response of Agent could not be read: JSON document could not be deserialized')
         except MultipleInvalid:  # HTTP_RESPONSE()
