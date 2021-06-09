@@ -132,10 +132,14 @@ class Tunnel(LoggerMixin):  # pylint: disable=too-many-instance-attributes
         return runtime_param
 
     def start(self, debug=None):
-        """Starts and controls SSH (child application) along with parameters.
+        """Establishes a SSH tunnel.
+
+        It determines along the way if the authentication process is successful.
 
         In addition, this method and mines for 'Authenticated' keywords, so
         we can keep track which hosts have been connected through.
+
+        SSH is here a 'child application'.
 
         Args:
             debug(basestring): if True, TIMEOUT will not be raised and may block indefinitely. Use only for debugging
@@ -153,7 +157,7 @@ class Tunnel(LoggerMixin):  # pylint: disable=too-many-instance-attributes
             #    doc says: Not supported on platforms where isatty() returns False.
             #    perhaps related to the recursive shells (SSH spawns a new shell in the current shell)
             self.child.setecho(False)
-            self._logger.debug('going through the stream to match patterns')
+            self._logger.debug('going through the stream to match patterns: %s', self.all_host_addr)
             for hostname in self.all_host_addr:
                 # according to the documentation, "If you wish to read up to the end of the child's output
                 #    without generating an EOF exception then use the expect(pexpect.EOF) method."
@@ -174,28 +178,27 @@ class Tunnel(LoggerMixin):  # pylint: disable=too-many-instance-attributes
                     result = True
                 elif index == 3:
                     self._logger.error('socket error. probable cause: SSH service on proxy or target machine disabled')
-                    self.child.terminate()
                     break
                 elif index == 4:
                     self._logger.error('the identity file is not accessible')
-                    self.child.terminate()
                     break
                 elif index == 5:
                     self._logger.warning('warning: hostname automatically added to list of known hosts')
                     self.child.sendline('yes')  # security issue
                 elif index == 6:
                     self._logger.error('SSH could not connect to %s', hostname)
-                    self.child.terminate()
                     break
                 elif index == 7:
                     self._logger.error('TIMEOUT exception was thrown. SSH could probably not connect to %s', hostname)
-                    self.child.terminate()
                     break
                 else:
                     self._logger.error('unknown state reached')
             self.child.expect(COMMAND_PROMPT)
         except pexpect.exceptions.ExceptionPexpect:
             self._logger.error('EOF is read; SSH has exited abnormally')
+            self.child.terminate()
+        if not result:
+            self._logger.error('debug information: %s', str(self.child))
             self.child.terminate()
         return result
 

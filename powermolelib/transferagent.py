@@ -77,6 +77,7 @@ class TransferAgent(LoggerMixin):
 
     @property
     def _path_to_agent_module(self):
+        """Determines the path to the Agent-module."""
         running_script = inspect.getframeinfo(inspect.currentframe()).filename
         running_script_dir = os.path.dirname(os.path.abspath(running_script))
         path_file = os.path.join(running_script_dir, 'payload', 'agent.py')
@@ -84,6 +85,7 @@ class TransferAgent(LoggerMixin):
         return path_file
 
     def _generate_ssh_runtime_param(self):
+        """Composes a SSH runtime param command."""
         if len(self.all_host_addr) == 2:  # only 1 gateway + destination host
             # the result will be something in this format:
             # scp -F {} -o 'ProxyJump 10.10.1.72' /home/vincent/Pictures/andy_apollo_imdb.jpg 10.10.2.92:/tmp
@@ -107,20 +109,24 @@ class TransferAgent(LoggerMixin):
         return runtime_param
 
     def start(self):
-        """Composes a SSH runtime param command and prints successful authentications."""
+        """Transfers the Agent module.
+
+        It determines along the way if the authentication process is successful.
+
+        """
         result = False
         try:
             self.child = pexpect.spawn(self._generate_ssh_runtime_param(), env={"TERM": "dumb"}, timeout=10)
             # self.process.setecho(False)  # doesn't seem to have effect
             # self.process.waitnoecho()  # doesn't seem to have effect
-            self._logger.debug('going through the stream to match patterns')
+            self._logger.debug('going through the stream to match patterns: %s', self.all_host_addr)
             for hostname in self.all_host_addr:
                 # according to the documentation, "If you wish to read up to the end of the child's output -
                 # without generating an EOF exception then use the expect(pexpect.EOF) method."
                 # but apparently this doesn't work in a shell within a shell (SSH spawns a new shell)
                 index = self.child.expect(
                     [f'Authenticated to {hostname}', 'Last failed login:', 'Last login:', 'socket error',
-                     'not accessible', 'fingerprint', 'open failed: connect failed:', 'No such file', pexpect.TIMEOUT])
+                     'not accessible', 'fingerprint', 'open failed: connect failed:', pexpect.TIMEOUT])
                 result = False  # reset var as this var could be set True in a previous iteration, we want fresh start
                 if index == 0:
                     self._logger.info('authenticated to %s', hostname)  # logger level is "info" to inform user
@@ -134,29 +140,26 @@ class TransferAgent(LoggerMixin):
                     result = True
                 elif index == 3:
                     self._logger.error('socket error. probable cause: SCP service on proxy or target machine disabled')
-                    self.child.terminate()
                     break
                 elif index == 4:
                     self._logger.error('the identity file is not accessible')
-                    self.child.terminate()
                     break
                 elif index == 5:
                     self._logger.warning('warning: hostname automatically added to list of known hosts')
                     self.child.sendline('yes')  # security issue
                 elif index == 6:
                     self._logger.error('SCP could not connect to %s', hostname)
-                    self.child.terminate()
                     break
                 elif index == 7:
-                    pass
-                elif index == 8:
                     self._logger.error('TIMEOUT exception was thrown. SCP could probably not connect to %s', hostname)
-                    self.child.terminate()
                     break
                 else:
                     self._logger.error('unknown state reached')
             self.child.expect(pexpect.EOF)  # the buffer has to be 'read' continuously, otherwise Pexpect deteriorates
         except pexpect.exceptions.ExceptionPexpect:
             self._logger.error('EOF is read; SCP has exited abnormally.')
+            self.child.terminate()
+        if not result:
+            self._logger.error('debug information: %s', str(self.child))
             self.child.terminate()
         return result
