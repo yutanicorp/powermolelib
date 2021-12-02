@@ -121,3 +121,9 @@ History
 ------------------
 
 * Fix bug to avoid crashing when unable to connect, reword paragraph in README, reword commit messages in HISTORY.RST, reword list of keywords for PyPi
+
+
+3.3.2 (02-12-2021)
+------------------
+
+* Fix bug responsible for crashing powermole during transfer Agent
