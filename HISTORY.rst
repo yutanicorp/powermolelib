@@ -133,3 +133,9 @@ History
 ------------------
 
 * Refactor heartbeat code and JSON validation schemas
+
+
+3.4.1 (19-12-2021)
+------------------
+
+* Fix error handling when sending of files fails
