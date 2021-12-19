@@ -127,3 +127,9 @@ History
 ------------------
 
 * Fix bug responsible for crashing powermole during transfer Agent
+
+
+3.4.0 (19-12-2021)
+------------------
+
+* Refactor heartbeat code and JSON validation schemas
