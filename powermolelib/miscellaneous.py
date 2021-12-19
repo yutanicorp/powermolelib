@@ -66,9 +66,11 @@ MODE_SCHEMA = Schema({Required("mode"): Any("TOR", "FOR", "PLAIN"),  # missing m
 
 TOR_SCHEMA = Schema({"mode": "TOR",
                      "gateways": [{"host_ip": str,
+                                   Optional("port", default=22): int,
                                    "user": str,
                                    "identity_file": str}],
                      "destination": {"host_ip": str,
+                                     Optional("port", default=22): int,
                                      "user": str,
                                      "identity_file": str},
                      Optional("application"): {"binary_name": str,
@@ -77,9 +79,11 @@ TOR_SCHEMA = Schema({"mode": "TOR",
 
 FOR_SCHEMA = Schema({"mode": "FOR",
                      "gateways": [{"host_ip": str,
+                                   Optional("port", default=22): int,
                                    "user": str,
                                    "identity_file": str}],
                      "destination": {"host_ip": str,
+                                     Optional("port", default=22): int,
                                      "user": str,
                                      "identity_file": str},
                      "forwarders": [{"local_port": int,
@@ -91,9 +95,11 @@ FOR_SCHEMA = Schema({"mode": "FOR",
 
 PLAIN_SCHEMA = Schema({"mode": "PLAIN",
                        "gateways": [{"host_ip": str,
+                                     Optional("port", default=22): int,
                                      "user": str,
                                      "identity_file": str}],
                        "destination": {"host_ip": str,
+                                       Optional("port", default=22): int,
                                        "user": str,
                                        "identity_file": str},
                        Optional("application"): {"binary_name": str,
@@ -145,8 +151,8 @@ class Configuration(LoggerMixin):  # pylint: disable=too-few-public-methods
         except ValueError:  # json.loads()
             self._logger.error('JSON document could not be deserialized ("ValueError")')
             raise InvalidConfigurationFile
-        except MultipleInvalid:  # Schema()
-            self._logger.error('data structure (dict) validating failed ("MultipleInvalid")')
+        except MultipleInvalid as exp:  # Schema()
+            self._logger.error('data structure (dict) validating failed ("MultipleInvalid"). %s', exp)
             raise InvalidConfigurationFile
 
     def get_config(self, filename):
@@ -183,11 +189,13 @@ def write_ssh_config_file(path_ssh_cfg_minitor, gateways, destination):
     for gateway in gateways:
         content += f'Host {gateway["host_ip"]}\n' \
                    f'  HostName {gateway["host_ip"]}\n' \
+                   f'  Port {gateway["port"]}\n' \
                    f'  User {gateway["user"]} \n' \
                    f'  IdentitiesOnly yes \n' \
                    f'  IdentityFile {gateway["identity_file"]}\n\n'
     content += f'Host {destination["host_ip"]}\n' \
                f'  HostName {destination["host_ip"]}\n' \
+               f'  Port {destination["port"]}\n' \
                f'  User {destination["user"]} \n' \
                f'  IdentitiesOnly yes \n' \
                f'  IdentityFile {destination["identity_file"]}\n\n'
@@ -244,6 +252,7 @@ class Heartbeat(LoggerMixin):  # context manager
     by this class. Consequently, this exception will stop the monitoring.
     """
 
+    # TODO: use profiler to investigate spinning fans when no heartbeats are received for some time
     def __init__(self, local_heartbeat_port, heartbeat_interval=10):
         super().__init__()
         self.thread = None
@@ -252,11 +261,26 @@ class Heartbeat(LoggerMixin):  # context manager
         self.local_heartbeat_port = local_heartbeat_port
         self.heartbeat_interval = heartbeat_interval
 
+    def start_ping(self):
+        """Sends a HTTP GET request and processes the response."""
+        http_code = 0
+        result = None
+        try:
+            with urllib.request.urlopen(f'http://localhost:{self.local_heartbeat_port}', timeout=2,
+                                        data=None) as request_obj:
+                http_code = request_obj.getcode()
+        except (URLError, ConnectionResetError, timeout) as exp:
+            self._logger.debug('sending GET request to Agent raised an error: %s', exp)
+            result = False
+        if http_code == 200:
+            result = True
+        return result
+
     def _run_heartbeat(self):
         while self.thread.is_alive:
             if self.terminate:
                 return None
-            self.is_tunnel_intact = start_ping(self.local_heartbeat_port)
+            self.is_tunnel_intact = self.start_ping()
             if self.is_tunnel_intact:
                 self._logger.debug('heartbeat signal was successfully returned')
             else:
@@ -270,6 +294,7 @@ class Heartbeat(LoggerMixin):  # context manager
         return self
 
     def __exit__(self, type_, value, traceback):
+        # make sure that all of the spawned resources are properly cleaned up
         self.terminate = True
         self._logger.info('heartbeat mechanism stopped')  # is it a valid log level?
 
@@ -287,19 +312,3 @@ def start_application(binary_name, binary_location):  # used in either FOR (w/ T
     except FileNotFoundError:
         LOGGER.error('the executable binary %s of the application was not found', binary_name)
         return False
-
-
-def start_ping(local_heartbeat_port):
-    """Sends a HTTP GET request and processes the response."""
-    heartbeat_port = local_heartbeat_port
-    http_code = 0
-    result = None
-    try:
-        with urllib.request.urlopen(f'http://localhost:{heartbeat_port}', timeout=2, data=None) as request_obj:
-            http_code = request_obj.getcode()
-    except (URLError, ConnectionResetError, timeout) as exp:
-        LOGGER.debug('sending GET request to Agent raised an error: %s', exp)
-        result = False
-    if http_code == 200:
-        result = True
-    return result

@@ -131,7 +131,7 @@ class Tunnel(LoggerMixin):  # pylint: disable=too-many-instance-attributes
         self._logger.debug(runtime_param)
         return runtime_param
 
-    def start(self, debug=None):
+    def start(self, debug=None):  # pylint: disable=too-many-branches
         """Establishes a SSH tunnel.
 
         It determines along the way if the authentication process is successful.

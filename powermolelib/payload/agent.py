@@ -266,7 +266,7 @@ class Agent(LoggerMixin):
 
 
 class TransferServer(LoggerMixin):
-    """Receives file(s) send by *Instructor()."""
+    """Receives file(s) sent by *Instructor()."""
 
     def __init__(self, port):
         """Initializes the TransferServer object."""
@@ -299,7 +299,7 @@ class TransferServer(LoggerMixin):
             while not self.terminate:
                 metadata = self.data_protocol.receive_metadata()
                 self.data_protocol.receive_file(metadata)
-                sleep(1)  # Costas, is this necessary to elevate performance?
+                sleep(0.1)
         except TransferError:
             self._logger.error('?')
 
@@ -474,11 +474,12 @@ class DataProtocol(SocketServer):  # Costas, LoggerMixin is subclassed by Socket
                 length_binary = connection.recv(16)
                 length_int = int(length_binary, 2)
                 metadata[key] = connection.recv(length_int)
-                self._logger.debug('%s: %s received' % (key, metadata[key]))
+                self._logger.debug('%s: %s received' % (key, metadata[key].encode('utf-8')))
             except IOError:
                 return self._send_status_code(connection, 'metadata', 1)
         self._send_status_code(connection, 'metadata', 0)
         return metadata  # {'dest_path': b'/tmp', 'file_name': b'amsterdam.jpg', 'file_size': b'98130'
+        # TODO: return metadata  # {'dest_path': '/tmp', 'file_name': 'amsterdam.jpg', 'file_size': '98130'
 
     def receive_file(self, metadata):
         """Writes the received data to a file."""
