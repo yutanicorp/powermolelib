@@ -191,8 +191,9 @@ class Instructor(ABC, LoggerMixin):
         self._logger.debug('connection from client to transfer server by Agent on destination host established')
         result = False
         try:
-            result = all([data_protocol.send_metadata(src_file_path, dest_path),
-                          data_protocol.send_file(src_file_path)])
+            if data_protocol.send_metadata(src_file_path, dest_path):
+                data_protocol.send_file(src_file_path)
+                result = True
         except FileNotFoundError:
             self._logger.error('file or directory does not exist on client')
         data_protocol.stop()

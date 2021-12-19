@@ -301,7 +301,7 @@ class TransferServer(LoggerMixin):
                 self.data_protocol.receive_file(metadata)
                 sleep(0.1)
         except TransferError:
-            self._logger.error('?')
+            self._logger.error('something went wrong during transfer')
 
     def _send_file(self, src_file_path, dest_path):
         result = False
@@ -434,11 +434,12 @@ class DataProtocol(SocketServer):  # Costas, LoggerMixin is subclassed by Socket
         """Closes the socket."""
         self.close_socket()
 
-    def send_metadata(self, source_file_path, destination_path, padding=16):
+    # TODO: fix issue with spaces and escape characters in file names
+    def send_metadata(self, source_file_path, destination_path, padding=16):  # /Users/vincent/Desktop/Screenshot\ 2021.png
         """Encodes the metadata."""
         metadata = {'dest_path': destination_path,
-                    'file_name': basename(source_file_path),
-                    'file_size': str(os.path.getsize(source_file_path))
+                    'file_name': basename(source_file_path),  # 'Screenshot\\ 2021.png'
+                    'file_size': str(os.path.getsize(source_file_path))  # No such file or directory: /Users/vincent/Desktop/Screenshot\\ 2021.png
                     }
         self.socket_.sendall(bytes('metadata', 'utf-8'))  # string is 8 bytes
         for value in metadata.values():
@@ -473,13 +474,13 @@ class DataProtocol(SocketServer):  # Costas, LoggerMixin is subclassed by Socket
             try:
                 length_binary = connection.recv(16)
                 length_int = int(length_binary, 2)
-                metadata[key] = connection.recv(length_int)
-                self._logger.debug('%s: %s received' % (key, metadata[key].encode('utf-8')))
-            except IOError:
-                return self._send_status_code(connection, 'metadata', 1)
+                metadata[key] = connection.recv(length_int).decode("UTF-8")
+                self._logger.debug('%s: %s received' % (key, metadata[key]))
+            except (IOError, Exception):
+                self._send_status_code(connection, 'metadata', 1)
+                raise TransferError
         self._send_status_code(connection, 'metadata', 0)
-        return metadata  # {'dest_path': b'/tmp', 'file_name': b'amsterdam.jpg', 'file_size': b'98130'
-        # TODO: return metadata  # {'dest_path': '/tmp', 'file_name': 'amsterdam.jpg', 'file_size': '98130'
+        return metadata  # {'dest_path': '/tmp', 'file_name': 'amsterdam.jpg', 'file_size': '98130'
 
     def receive_file(self, metadata):
         """Writes the received data to a file."""
@@ -520,6 +521,9 @@ class DataProtocol(SocketServer):  # Costas, LoggerMixin is subclassed by Socket
         elif process == 'filedata' and status_code == 0:
             self._logger.debug('file is transferred')
             result = True
+        else:
+            self._logger.error('something went wrong during transfer')
+            result = False
         return result
 
     def _send_status_code(self, connection, process, status_code):
@@ -527,8 +531,10 @@ class DataProtocol(SocketServer):  # Costas, LoggerMixin is subclassed by Socket
             self._logger.debug('metadata is received successfully')
         elif process == 'filedata' and status_code == 0:
             self._logger.debug('filedata is received successfully')
+        elif (process == 'filedata' or process == 'metadata') and status_code == 1:
+            self._logger.error('something went wrong during transfer')
         else:
-            self._logger.debug('something went wrong')
+            self._logger.debug('unknown state')
         msg = {'process': f'{process}', 'status_code': int(status_code)}
         json_instruction = json.dumps(msg)  # from dict to JSON
         data = json_instruction.encode('utf-8')  # from string to byte
