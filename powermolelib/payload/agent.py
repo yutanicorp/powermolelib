@@ -439,7 +439,7 @@ class DataProtocol(SocketServer):  # Costas, LoggerMixin is subclassed by Socket
         """Encodes the metadata."""
         metadata = {'dest_path': destination_path,
                     'file_name': basename(source_file_path),  # 'Screenshot\\ 2021.png'
-                    'file_size': str(os.path.getsize(source_file_path))  # No such file or directory: /Users/vincent/Desktop/Screenshot\\ 2021.png
+                    'file_size': str(os.path.getsize(r'{}'.format(source_file_path.replace('\\','/'))))   # No such file or directory: /Users/vincent/Desktop/Screenshot\\ 2021.png
                     }
         self.socket_.sendall(bytes('metadata', 'utf-8'))  # string is 8 bytes
         for value in metadata.values():
