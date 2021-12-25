@@ -434,12 +434,11 @@ class DataProtocol(SocketServer):  # Costas, LoggerMixin is subclassed by Socket
         """Closes the socket."""
         self.close_socket()
 
-    # TODO: fix issue with spaces and escape characters in file names
-    def send_metadata(self, source_file_path, destination_path, padding=16):  # /Users/vincent/Desktop/Screenshot\ 2021.png
+    def send_metadata(self, source_file_path, destination_path, padding=16):
         """Encodes the metadata."""
         metadata = {'dest_path': destination_path,
-                    'file_name': basename(source_file_path),  # 'Screenshot\\ 2021.png'
-                    'file_size': str(os.path.getsize(source_file_path))  # No such file or directory: /Users/vincent/Desktop/Screenshot\\ 2021.png
+                    'file_name': basename(source_file_path.replace('\\', '')),
+                    'file_size': str(os.path.getsize(source_file_path.replace('\\', '')))
                     }
         self.socket_.sendall(bytes('metadata', 'utf-8'))  # string is 8 bytes
         for value in metadata.values():
@@ -452,9 +451,9 @@ class DataProtocol(SocketServer):  # Costas, LoggerMixin is subclassed by Socket
 
     def send_file(self, source_file_path):
         """Sends the content of the file."""
-        self._logger.debug('convert file %s to bytes and send', basename(source_file_path))
+        self._logger.debug('convert file %s to bytes and send', basename(source_file_path.replace('\\', '')))
         self.socket_.sendall(bytes('filedata', 'utf-8'))
-        data = open(source_file_path, 'rb')  # type is "_io.BufferedReader"
+        data = open(source_file_path.replace('\\', ''), 'rb')  # type is "_io.BufferedReader"
         self.socket_.sendall(data.read())
         return self._check_delivery_code()
 
