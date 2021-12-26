@@ -36,13 +36,13 @@ from .tunnel import Tunnel
 from .instructor import Instructor, TorInstructor, ForInstructor, PlainInstructor
 from .transferagent import TransferAgent
 
-__author__ = '''Vincent Schouten <inquiry@intoreflection.co>'''
+__author__ = '''Vincent Schouten <powermole@protonmail.com>'''
 __docformat__ = '''google'''
 __date__ = '''06-04-2019'''
 __copyright__ = '''Copyright 2019, Vincent Schouten'''
 __license__ = '''MIT'''
 __maintainer__ = '''Vincent Schouten'''
-__email__ = '''<inquiry@intoreflection.co>'''
+__email__ = '''<powermole@protonmail.com>'''
 __status__ = '''Development'''  # "Prototype", "Development", "Production".
 
 # This is to 'use' the module(s), so lint doesn't complain

@@ -31,28 +31,24 @@ Main code for instructor.
 
 """
 
-# import socket
-# import os.path
 import urllib.request
 import json
-# import threading
 from socket import timeout
 from abc import ABC, abstractmethod
-# from os.path import basename
 from urllib.error import URLError
 from voluptuous import Schema, Required, Any, MultipleInvalid
 from .logging import LoggerMixin
 from .payload.agent import DataProtocol
 from .powermolelibexceptions import InvalidDataStructure
 
-__author__ = '''Vincent Schouten <inquiry@intoreflection.co>'''
+__author__ = '''Vincent Schouten <powermole@protonmail.com>'''
 __docformat__ = '''google'''
 __date__ = '''10-05-2019'''
 __copyright__ = '''Copyright 2021, Vincent Schouten'''
 __credits__ = ["Vincent Schouten"]
 __license__ = '''MIT'''
 __maintainer__ = '''Vincent Schouten'''
-__email__ = '''<inquiry@intoreflection.co>'''
+__email__ = '''<powermole@protonmail.com>'''
 __status__ = '''Development'''  # "Prototype", "Development", "Production".
 
 # Constant for Pexpect. This prompt is default for Fedora and CentOS.

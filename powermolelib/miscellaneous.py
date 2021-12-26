@@ -31,7 +31,6 @@ Main code for miscellaneous.
 
 """
 import json
-import logging
 import logging.config
 import threading
 import subprocess
@@ -43,14 +42,13 @@ from voluptuous import Schema, Required, Any, REMOVE_EXTRA, Optional, MultipleIn
 from .powermolelibexceptions import InvalidConfigurationFile
 from .logging import LOGGER_BASENAME as ROOT_LOGGER_BASENAME, LoggerMixin
 
-
-__author__ = '''Vincent Schouten <inquiry@intoreflection.co>'''
+__author__ = '''Vincent Schouten <powermole@protonmail.com>'''
 __docformat__ = '''google'''
 __date__ = '''10-05-2019'''
 __copyright__ = '''Copyright 2021, Vincent Schouten'''
 __license__ = '''MIT'''
 __maintainer__ = '''Vincent Schouten'''
-__email__ = '''<inquiry@intoreflection.co>'''
+__email__ = '''<powermole@protonmail.com>'''
 __status__ = '''Development'''  # "Prototype", "Development", "Production".
 
 # This is the main prefix used for logging
@@ -59,7 +57,7 @@ logging.basicConfig(format='%(asctime)s %(name)s %(levelname)s %(message)s',
 LOGGER = logging.getLogger(f'{ROOT_LOGGER_BASENAME}.miscellaneous')  # non-class objects like fn will consult this object
 
 # Constants
-HEARTBEAT_DURATION = 5
+HEARTBEAT_DURATION = 10
 
 MODE_SCHEMA = Schema({Required("mode"): Any("TOR", "FOR", "PLAIN"),  # missing mode will raise "MultipleInvalid"
                       }, extra=REMOVE_EXTRA)
@@ -248,12 +246,14 @@ class StateManager(LoggerMixin):  # context manager
 class Heartbeat(LoggerMixin):  # context manager
     """Determines periodically the state of the tunnel.
 
-    An KeyboardInterrupt, which is an exception, will first be caught
-    by this class. Consequently, this exception will stop the monitoring.
+    An KeyboardInterrupt, which is an exception, will propagate through
+    this class and exits this class.
+
+    Note: Research if threading with Event.wait or multiprocessing is
+    a better approach.
     """
 
-    # TODO: use profiler to investigate spinning fans when no heartbeats are received for some time
-    def __init__(self, local_heartbeat_port, heartbeat_interval=10):
+    def __init__(self, local_heartbeat_port, heartbeat_interval=HEARTBEAT_DURATION):
         super().__init__()
         self.thread = None
         self.is_tunnel_intact = True
@@ -285,18 +285,18 @@ class Heartbeat(LoggerMixin):  # context manager
                 self._logger.debug('heartbeat signal was successfully returned')
             else:
                 self._logger.error('heartbeat signal was not returned')
-            sleep(self.heartbeat_interval)
+            sleep(self.heartbeat_interval)  # blocks the thread from continuing to run
 
     def __enter__(self):
         self.thread = threading.Thread(target=self._run_heartbeat)
         self.thread.start()
-        self._logger.info('heartbeat mechanism started')  # is it a valid log level?
+        self._logger.info('heartbeat mechanism started')
         return self
 
     def __exit__(self, type_, value, traceback):
         # make sure that all of the spawned resources are properly cleaned up
         self.terminate = True
-        self._logger.info('heartbeat mechanism stopped')  # is it a valid log level?
+        self._logger.info('heartbeat mechanism stopped')
 
 
 def start_application(binary_name, binary_location):  # used in either FOR (w/ Thunderbird) or TOR mode (w/ Firefox)

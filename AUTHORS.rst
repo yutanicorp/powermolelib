@@ -5,7 +5,7 @@ Credits
 Development Lead
 ----------------
 
-* Vincent Schouten <inquiry@intoreflection.co>
+* Vincent Schouten <powermole@protonmail.com>
 
 Contributors
 ------------

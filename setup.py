@@ -31,7 +31,7 @@ setup(
     description='''a library that is responsible of modeling objects to connect to another host via one or more intermediaries, offering a variety of modes (FOR and TOR) and options (TRANSFER and COMMAND)''',
     long_description=readme + '\n\n' + history,
     author='''Vincent Schouten''',
-    author_email='''inquiry@intoreflection.co''',
+    author_email='''powermole@protonmail.com''',
     url='''https://github.com/yutanicorp/powermolelib''',
     packages=find_packages(where='.', exclude=('tests', 'hooks', '_CI*')),
     package_dir={'''powermolelib''':
