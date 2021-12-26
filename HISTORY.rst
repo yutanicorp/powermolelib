@@ -139,3 +139,9 @@ History
 ------------------
 
 * Fix error handling when sending of files fails
+
+
+3.4.2 (26-12-2021)
+------------------
+
+* Reword email address and fix sending files containing spaces
