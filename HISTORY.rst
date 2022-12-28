@@ -145,3 +145,9 @@ History
 ------------------
 
 * Reword email address and fix sending files containing spaces
+
+
+3.4.3 (28-12-2022)
+------------------
+
+* Fix security vulnerability in 3rd party package
