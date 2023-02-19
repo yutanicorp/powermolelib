@@ -161,7 +161,7 @@ class Agent(LoggerMixin):
             _logger = logging.getLogger(logger_name)
             socketserver.TCPServer.allow_reuse_address = True
 
-            def do_POST(self):
+            def do_POST(self):  # noqa
                 """Creates the response."""
                 try:
                     data = self.rfile.read(int(self.headers['Content-Length']))  # b'{"process":"heartbeat_responder"}
@@ -583,7 +583,7 @@ class CommandServer(LoggerMixin):
             # socketserver.BaseRequestHandler.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             socketserver.TCPServer.allow_reuse_address = True
 
-            def do_POST(self):  # pylint: disable=invalid-name
+            def do_POST(self):  # noqa
                 """Creates the response containing the result."""
                 try:
                     data = self.rfile.read(int(self.headers['Content-Length']))  # b'{"command":"ls -l /"}
