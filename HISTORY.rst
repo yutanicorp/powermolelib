@@ -151,3 +151,9 @@ History
 ------------------
 
 * Fix security vulnerability in 3rd party package
+
+
+3.4.4 (19-02-2023)
+------------------
+
+* Fix development workflow
