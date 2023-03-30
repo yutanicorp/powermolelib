@@ -157,3 +157,9 @@ History
 ------------------
 
 * Fix development workflow
+
+
+3.4.5 (30-03-2023)
+------------------
+
+* Fix security vulnerability, add Python version check
