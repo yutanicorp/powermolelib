@@ -70,7 +70,7 @@ LOGGER = logging.getLogger()  # not used?
 LOGGER_BASENAME = '''Agent'''
 
 
-class LoggerMixin:  # pylint: disable=too-few-public-methods
+class LoggerMixin:
     """Contains a logger method for use by other classes."""
 
     def __init__(self):
@@ -156,8 +156,7 @@ class Agent(LoggerMixin):
         class Handler(http.server.SimpleHTTPRequestHandler):
             """Parses HTTP requests."""
 
-            logger_name = u'{base}.{suffix}'.format(base=LOGGER_BASENAME,
-                                                    suffix='Handler')
+            logger_name = f'{LOGGER_BASENAME}.Handler'
             _logger = logging.getLogger(logger_name)
             socketserver.TCPServer.allow_reuse_address = True
 
@@ -275,7 +274,7 @@ class TransferServer(LoggerMixin):
         self.data_protocol = None
         self.terminate = False
 
-    def start(self, mode, src_file_path=None, dest_path=None):
+    def start(self, mode):  # src_file_path=None, dest_path=None
         """Starts transfer server."""
         self._logger.debug('starting transfer server')
         self.data_protocol = DataProtocol(mode, self.port)
@@ -303,18 +302,16 @@ class TransferServer(LoggerMixin):
         except TransferError:
             self._logger.error('something went wrong during transfer')
 
-    def _send_file(self, src_file_path, dest_path):
+    def _send_file(self, src_file_path, dest_path):  # NOT IMPLEMENTED
         result = False
         try:
             result = all([self.data_protocol.send_metadata(src_file_path, dest_path),
                           self.data_protocol.send_file(src_file_path)])
-            result = True
         except FileNotFoundError:
             self._logger.error('file or directory does not exist')
         except TransferError:
             self._logger.error('something went wrong during transfer')
-        finally:
-            return result
+        return result
 
 
 class SocketServer(LoggerMixin):
@@ -407,7 +404,7 @@ class SocketServer(LoggerMixin):
             return False
 
 
-class DataProtocol(SocketServer):  # Costas, LoggerMixin is subclassed by SocketServer, but I'd like to mention it here
+class DataProtocol(SocketServer):  # LoggerMixin is subclassed by SocketServer, but I'd like to mention it here
     """Dictates how to format, transmit and receive data.
 
     Encodes file metadata and sends it along with the content of the (binary) file
@@ -434,7 +431,7 @@ class DataProtocol(SocketServer):  # Costas, LoggerMixin is subclassed by Socket
         """Closes the socket."""
         self.close_socket()
 
-    def send_metadata(self, source_file_path, destination_path, padding=16):
+    def send_metadata(self, source_file_path, destination_path, padding=16):  # NOT IMPLEMENTED
         """Encodes the metadata."""
         metadata = {'dest_path': destination_path,
                     'file_name': basename(source_file_path.replace('\\', '')),
@@ -449,50 +446,53 @@ class DataProtocol(SocketServer):  # Costas, LoggerMixin is subclassed by Socket
             self.socket_.sendall(data)
         return self._check_delivery_code()
 
-    def send_file(self, source_file_path):
+    def send_file(self, source_file_path):  # NOT IMPLEMENTED
         """Sends the content of the file."""
         self._logger.debug('convert file %s to bytes and send', basename(source_file_path.replace('\\', '')))
         self.socket_.sendall(bytes('filedata', 'utf-8'))
-        data = open(source_file_path.replace('\\', ''), 'rb')  # type is "_io.BufferedReader"
-        self.socket_.sendall(data.read())
+        with open(source_file_path.replace('\\', ''), 'rb') as file:  # type is "_io.BufferedReader"
+            data = file.read()
+        self.socket_.sendall(data)
         return self._check_delivery_code()
 
     def receive_metadata(self):
         """Decodes the metadata."""
         if not self.connections:
-            return
+            return None
         connection = self.connections[-1]
         process = connection.recv(8)
         if process != b'metadata':
-            return
+            return None
         metadata = {'dest_path': None,
                     'file_name': None,
                     'file_size': None
                     }
-        for key, value in metadata.items():
+        for key, _ in metadata.items():
             try:
                 length_binary = connection.recv(16)
                 length_int = int(length_binary, 2)
                 metadata[key] = connection.recv(length_int).decode("UTF-8")
-                self._logger.debug('%s: %s received' % (key, metadata[key]))
+                self._logger.debug(f'{key}: {metadata[key]} received')  # logging-fstring-interpolation
             except (IOError, Exception):
                 self._send_status_code(connection, 'metadata', 1)
-                raise TransferError
+                raise TransferError from None
         self._send_status_code(connection, 'metadata', 0)
         return metadata  # {'dest_path': '/tmp', 'file_name': 'amsterdam.jpg', 'file_size': '98130'
 
     def receive_file(self, metadata):
         """Writes the received data to a file."""
         if not metadata:
-            return
+            return None
         connection = self.connections.pop()
         process = connection.recv(8)
         if process != b'filedata':
-            return
+            return None
         file_size = int(metadata['file_size'])
         try:
-            file_to_write = open(os.path.join(metadata['dest_path'],
-                                              metadata['file_name']), 'wb')  # can raise: "No such file or directory"
+            # write code to check if given destination path actually exists on last host
+            # to avoid: "No such file or directory"
+            path = os.path.join(metadata['dest_path'], metadata['file_name'])
+            file_to_write = open(path, 'wb')  # pylint: disable=consider-using-with
             chunk_size = 4096
             while file_size > 0:
                 if file_size < chunk_size:
@@ -530,7 +530,7 @@ class DataProtocol(SocketServer):  # Costas, LoggerMixin is subclassed by Socket
             self._logger.debug('metadata is received successfully')
         elif process == 'filedata' and status_code == 0:
             self._logger.debug('filedata is received successfully')
-        elif (process == 'filedata' or process == 'metadata') and status_code == 1:
+        elif process in ('filedata', 'metadata') and status_code == 1:
             self._logger.error('something went wrong during transfer')
         else:
             self._logger.debug('unknown state')
@@ -577,8 +577,7 @@ class CommandServer(LoggerMixin):
         class Handler(http.server.SimpleHTTPRequestHandler):
             """Parses HTTP requests."""
 
-            logger_name = u'{base}.{suffix}'.format(base=LOGGER_BASENAME,
-                                                    suffix='Handler')
+            logger_name = f'{LOGGER_BASENAME}.Handler'
             _logger = logging.getLogger(logger_name)
             # socketserver.BaseRequestHandler.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             socketserver.TCPServer.allow_reuse_address = True
@@ -592,7 +591,7 @@ class CommandServer(LoggerMixin):
                     command_dict = json.loads(command_string)  # convert JSON to dict
                     command_val = validate_http_command(command_dict)  # validate the structure of the content of req.
                     command = command_val.get('command')
-                    instance._logger.debug('following Linux command was received from instructor: %s', command)
+                    instance._logger.debug('following Linux command was received from instructor: %s', command)  # pylint: disable=protected-access
                     # eg. b'{"command": "hostname"}'
                 except json.decoder.JSONDecodeError:  # json.loads()
                     self._logger.error('the content is incorrectly parsed in JSON')
@@ -600,7 +599,7 @@ class CommandServer(LoggerMixin):
                 except InvalidDataStructure:  # validate_http_instruction()
                     self._logger.error('data structure (dict) validation failed')
                     return False
-                result_command = instance._issue_command(command.split())
+                result_command = instance._issue_command(command.split())  # pylint: disable=protected-access
                 self.send_response(200)
                 self.end_headers()
                 self.wfile.write(result_command)
@@ -625,8 +624,7 @@ class CommandServer(LoggerMixin):
             self._logger.debug('result of Linux commando is %s', result)  # eg. b'server.enterprise.com'
         except FileNotFoundError:
             self._logger.error('Linux command could not be executed')
-        finally:
-            return result
+        return result
 
     def stop(self):
         """Stops the command server."""
@@ -664,9 +662,9 @@ class HeartbeatResponder(LoggerMixin):
                 # kwargs['directory'] = directory  # I had to comment out, because -->
                 super().__init__(*args, **kwargs)  # --> "TypeError: __init__ got an unexpected kwarg 'directory'"
 
-            def do_GET(self):
+            def do_GET(self):  # noqa
                 """Creates the response."""
-                instance._logger.debug('GET request received')
+                instance._logger.debug('GET request received')  # pylint: disable=protected-access
                 self.send_response(200)
                 self.end_headers()
 
@@ -734,17 +732,17 @@ class Daemon(ABC):
         # This is a child that can't ever have a controlling TTY.
 
         # redirect standard file descriptor for *stdin* (essentially shut down stdin)
-        with open('/dev/null', 'r') as dev_null:
+        with open('/dev/null', 'r', encoding='utf-8') as dev_null:
             os.dup2(dev_null.fileno(), sys.stdin.fileno())  # os.dup <-- duplicate file descriptor
 
         # redirect standard file descriptor for *stderr* to log file
         sys.stderr.flush()
-        with open(self.stderr, 'a+') as stderr:
+        with open(self.stderr, 'a+', encoding='utf-8') as stderr:
             os.dup2(stderr.fileno(), sys.stderr.fileno())  # os.dup <-- duplicate file descriptor
 
         # redirect standard file descriptor for *stdout* to log file
         sys.stdout.flush()
-        with open(self.stdout, 'a+') as stdout:
+        with open(self.stdout, 'a+', encoding='utf-8') as stdout:
             os.dup2(stdout.fileno(), sys.stdout.fileno())  # os.dup <-- duplicate file descriptor
 
         # registered functions are executed automatically when the interpreter session is terminated normally.
@@ -767,25 +765,25 @@ class Daemon(ABC):
         pid = str(os.getpid())
 
         # write pid to file
-        with open(self.pid_file, 'w') as pid_f:
-            pid_f.write('{0}'.format(pid))
+        with open(self.pid_file, 'w', encoding='utf-8') as pid_f:
+            pid_f.write(pid)
 
     @property
     def pid(self):
         """Returns the pid read from the pid file."""
         try:
-            with open(self.pid_file, 'r') as pid_file:
+            with open(self.pid_file, 'r', encoding='utf-8') as pid_file:
                 pid = int(pid_file.read().strip())
             return pid
         except IOError:
-            return
+            return None  # added "None" to avoid inconsistent-return-statements
 
     def start(self, function):
         """Starts the daemon."""
         # print('Starting...')
         if self.pid:
-            print(('PID file {0} exists. '
-                   'Is the daemon already running?').format(self.pid_file))
+            print((f'PID file {self.pid_file} exists. '
+                   'Is the daemon already running?'))
             sys.exit(1)
         self._daemonize()
         function()
@@ -793,8 +791,8 @@ class Daemon(ABC):
     def stop(self):
         """Stops the daemon."""
         if not self.pid:
-            print(("PID file {0} doesn't exist. "
-                   "Is the daemon not running?").format(self.pid_file))
+            print((f"PID file {self.pid_file} doesn't exist. "
+                   "Is the daemon not running?"))
             return
         try:
             while 1:
@@ -1009,10 +1007,10 @@ class RequestHandler(LoggerMixin):
         reply = VER + rep + b'\x00' + ATYP_IPV4 + bnd
         try:
             self.connection.sendall(reply)
+            return result
         except socket.error:
             self.connection.close()  # pay attention to this one!
             result = False
-        finally:
             return result
 
     def _forward_data(self):
@@ -1152,7 +1150,7 @@ def main():
         agent.start()
     except KeyboardInterrupt:
         agent.stop()
-        raise SystemExit(0)
+        raise SystemExit(0) from None
 
 
 if __name__ == "__main__":

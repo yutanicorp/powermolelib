@@ -105,7 +105,7 @@ PLAIN_SCHEMA = Schema({"mode": "PLAIN",
                        }, required=True)
 
 
-class Configuration(LoggerMixin):  # pylint: disable=too-few-public-methods
+class Configuration(LoggerMixin):
     """Parses the configuration file and composes the local forwarding string (SSH -L)."""
 
     def __init__(self, config_file):
@@ -140,22 +140,22 @@ class Configuration(LoggerMixin):  # pylint: disable=too-few-public-methods
             # ex. ['10.10.1.72', '10.10.2.92']
         except AttributeError as exp:
             self._logger.error('configuration file could not be parsed. %s', exp)  # raised by config.get()
-            raise InvalidConfigurationFile
+            raise InvalidConfigurationFile from None  # None because the underlying cause is not important
         except FileNotFoundError:  # open()
             self._logger.error('configuration file could not be opened ("FileNotFoundError")')
-            raise InvalidConfigurationFile
+            raise InvalidConfigurationFile from None
         except IOError:  # open()
             self._logger.error('not enough permissions to open configuration file ("IOError")')
         except ValueError:  # json.loads()
             self._logger.error('JSON document could not be deserialized ("ValueError")')
-            raise InvalidConfigurationFile
+            raise InvalidConfigurationFile from None
         except MultipleInvalid as exp:  # Schema()
             self._logger.error('data structure (dict) validating failed ("MultipleInvalid"). %s', exp)
-            raise InvalidConfigurationFile
+            raise InvalidConfigurationFile from None
 
     def get_config(self, filename):
         """Validates the data structure and parses the parameters in a dictionary."""
-        with open(filename, 'r') as file:
+        with open(filename, 'r', encoding='utf-8') as file:
             _temp = json.loads(file.read())
             _mode = MODE_SCHEMA(_temp)
             if _mode.get('mode') == 'TOR':
@@ -200,7 +200,7 @@ def write_ssh_config_file(path_ssh_cfg_minitor, gateways, destination):
     LOGGER.debug('"%s" is written to ssh config config file: %s', content.replace("\n", ""),
                  path_ssh_cfg_minitor)
     try:
-        with open(path_ssh_cfg_minitor, 'w') as data_source:
+        with open(path_ssh_cfg_minitor, 'w', encoding='utf-8') as data_source:
             data_source.write(content)
     except IOError:
         LOGGER.error('ssh config file %s could not be read', path_ssh_cfg_minitor)
@@ -306,7 +306,7 @@ def start_application(binary_name, binary_location):  # used in either FOR (w/ T
         # process = subprocess.run([binary_location], subprocess.DEVNULL)
         # with open(os.devnull, 'w') as devnull:
         #     process = subprocess.run([binary_location], stdout=devnull, stderr=devnull)
-        process = subprocess.Popen(binary_location, shell=True)
+        process = subprocess.Popen(binary_location, shell=True)  # pylint: disable=consider-using-with
         # LOGGER.debug('application %s executed and the return code was: %s', binary_name, process.returncode)
         return process
     except FileNotFoundError:

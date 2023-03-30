@@ -4,8 +4,6 @@ verify_ssl = true
 name = "pypi"
 
 [dev-packages]
-
-
 sphinx = ">=6.0,<7.0"
 sphinx-rtd-theme = ">=1.0,<2.0"
 prospector = ">=1.8,<2.0"
@@ -21,7 +19,6 @@ twine = ">=4.0,<5.0"
 coloredlogs = ">=15.0,<16.0"
 emoji = ">=2.0,<3.0"
 toml = ">=0.1,<1.0"
-
 
 [packages]
 pexpect = "~=4.7.0"

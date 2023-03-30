@@ -53,7 +53,7 @@ __status__ = '''Development'''  # "Prototype", "Development", "Production".
 COMMAND_PROMPT = '[#$] '
 
 
-class Tunnel(LoggerMixin):  # pylint: disable=too-many-instance-attributes
+class Tunnel(LoggerMixin):
     """Establishes a connection to the target destination host via one or more intermediaries.
 
     Be aware, the child's buffer needs to be purged periodically. This can be done by invoking
@@ -131,8 +131,8 @@ class Tunnel(LoggerMixin):  # pylint: disable=too-many-instance-attributes
         self._logger.debug(runtime_param)
         return runtime_param
 
-    def start(self, debug=None):  # pylint: disable=too-many-branches
-        """Establishes a SSH tunnel.
+    def start(self, debug=None):
+        """Establishes an SSH tunnel.
 
         It determines along the way if the authentication process is successful.
 
@@ -149,9 +149,9 @@ class Tunnel(LoggerMixin):  # pylint: disable=too-many-instance-attributes
         """
         result = False
         try:
-            arguments = dict(command=self._generate_ssh_runtime_param(), env={"TERM": "dumb"}, encoding='utf-8')
+            arguments = {"command": self._generate_ssh_runtime_param(), "env": {"TERM": "dumb"}, "encoding": 'utf-8'}
             if debug:
-                arguments.update(dict(timeout=10))
+                arguments.update({"timeout": 10})
             self.child = pexpect.spawn(**arguments)
             # setecho() doesn't seem to have effect.
             #    doc says: Not supported on platforms where isatty() returns False.
@@ -213,7 +213,8 @@ class Tunnel(LoggerMixin):  # pylint: disable=too-many-instance-attributes
 
     def debug(self):
         """Captures the output of the child (warning: BLOCKING)."""
-        fout = open('~/mylog.txt', 'a')
+        with open('~/mylog.txt', 'a', encoding='utf-8') as file:
+            fout = file
         self.child.logfile = fout
         try:
             self.child.readlines()

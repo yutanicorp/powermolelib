@@ -85,18 +85,35 @@ class BootstrapAgent(LoggerMixin):
     def start(self):
         """Executes the agent python module (after checking for availability and running process)."""
         result = False
-        if self.is_agent_module_available():
-            if self._can_agent_be_probed():
-                if not self._instruct_stop_agent():
-                    self._logger.warning('running Agent could not be instructed to stop')
+        if self._is_python3_available():
+            if self.is_agent_module_available():
+                if self._can_agent_be_probed():
+                    if not self._instruct_stop_agent():
+                        self._logger.warning('running Agent could not be instructed to stop')
+                        if self._is_process_alive():
+                            self._killing_process()
+                            self._logger.warning('running Agent process has been killed')
+                else:
                     if self._is_process_alive():
                         self._killing_process()
                         self._logger.warning('running Agent process has been killed')
-            else:
-                if self._is_process_alive():
-                    self._killing_process()
-                    self._logger.warning('running Agent process has been killed')
-            result = self._execute_agent()
+                result = self._execute_agent()
+        return result
+
+    def _is_python3_available(self):
+        """Determines if python 3 binary is available."""
+        result = False
+        # command = f"pgrep -fc '/bin/python3 {self.path_to_agent}'"
+        command = '/bin/python3 -V; echo $?'
+        self._logger.debug('probing if Python 3 binary exists by requesting version %s', command)
+        self.tunnel.child.sendline(command)
+        index = self.tunnel.child.expect(['0', '127', pexpect.TIMEOUT], timeout=3)
+        self.tunnel.child.expect(COMMAND_PROMPT)
+        if index == 0:
+            self._logger.debug('Python 3 is available')
+            result = True
+        if index == 1:
+            self._logger.debug('Python 3 is not available!')
         return result
 
     def _can_agent_be_probed(self):
