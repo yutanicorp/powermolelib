@@ -45,7 +45,7 @@ The Instructor in conjunction with the Agent provides two modes:
 * TOR mode
 * FOR(warding) mode
 
-Regardless which mode is enabled, several options are presented when the the tunnel is established:
+Regardless which mode is enabled, several options are presented when the tunnel is established:
 
 * COMMAND: this option provides a rudimentary terminal interface to provide access to OS services on the target destination host.
 * TRANSFER: this options allows selected files to be transferred to the target destination host.
@@ -135,6 +135,6 @@ This project is licensed under the MIT License - see the `LICENSE.md <LICENSE.md
 Acknowledgments
 ===============
 
-* rofl0r (developer of proxychains-ng)
 * Costas Tyfoxylos
+* MisterDaneel (developer of pysoxy)
 
