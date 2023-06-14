@@ -163,3 +163,9 @@ History
 ------------------
 
 * Fix security vulnerability, add Python version check
+
+
+3.4.6 (14-06-2023)
+------------------
+
+* Document paragraph about terminology
