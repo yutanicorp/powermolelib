@@ -19,8 +19,6 @@ The Agent also responds to heartbeats send by localhost to check if connection i
 Use the package **powermolecli** or **powermolegui** to interact with this library.
 
 
-
-
 How it works
 ============
 
@@ -32,23 +30,33 @@ Terminology
 
 The program uses ssh to connect to the last host via one or more intermediaries.
 
-.. image:: ../img/illustration_how_it_works_1.png
+.. image:: ../img/illustration_how_it_works__1.png
 
 
 Through port forwarding, the program can communicate with the agent on the last host.
 
-.. image:: ../img/illustration_how_it_works_2.png
-
+.. image:: ../img/illustration_how_it_works__2.png
 
 The Instructor in conjunction with the Agent provides two modes:
 
 * TOR mode
+
+  * The target destination host acts as an exit node (in TOR terminology).
+
 * FOR(warding) mode
+
+  * Connections are forwarded to the target destination host.
+
 
 Regardless which mode is enabled, several options are presented when the tunnel is established:
 
-* COMMAND: this option provides a rudimentary terminal interface to provide access to OS services on the target destination host.
-* TRANSFER: this options allows selected files to be transferred to the target destination host.
+* COMMAND
+
+  * This option provides a rudimentary terminal interface to provide access to OS services on the target destination host.
+
+* TRANSFER
+
+  * This options allows selected files to be transferred to the target destination host.
 
 
 See `cli <https://github.com/yutanicorp/powermolecli>`_ or `gui <https://github.com/yutanicorp/powermolegui>`_ packages for implementation.

@@ -37,11 +37,16 @@ Through port forwarding, the program can communicate with the Agent on the targe
 The Instructor in conjunction with the Agent provides two modes:
 
 * TOR mode
+  *  The target destination host acts as an exit node (in TOR terminology).
 * FOR(warding) mode
+  *  Connections are forwarded to the target destination host.
+
 
 Regardless which mode is enabled, several options are presented when the tunnel is established:
-* COMMAND: this option provides a rudimentary terminal interface to provide access to OS services on the target destination host.
-* TRANSFER: this options allows selected files to be transferred to the target destination host.
+* COMMAND
+  * This option provides a rudimentary terminal interface to provide access to OS services on the target destination host.
+* TRANSFER
+  * This options allows selected files to be transferred to the target destination host.
 
 
 See [cli](https://github.com/yutanicorp/powermolecli) or [gui](https://github.com/yutanicorp/powermolegui) packages for implementation.
