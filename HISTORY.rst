@@ -169,3 +169,9 @@ History
 ------------------
 
 * Document paragraph about terminology
+
+
+3.4.7 (27-08-2023)
+------------------
+
+* Add Read The Docs configuration file v2, Bump dependencies
