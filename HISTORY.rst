@@ -175,3 +175,9 @@ History
 ------------------
 
 * Add Read The Docs configuration file v2, Bump dependencies
+
+
+3.4.8 (28-01-2024)
+------------------
+
+* Bump 3rd party package to fix security vulnerability, update template with newer Python version
