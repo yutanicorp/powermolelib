@@ -853,7 +853,7 @@ class ProxyServer(LoggerMixin):
 
     def _thread_main_method_per_conn(self):
         while not self.should_terminate:
-            if threading.activeCount() > MAX_THREADS:
+            if threading.active_count() > MAX_THREADS:
                 sleep(2)
                 continue
             if not self.socket_server.connections:
