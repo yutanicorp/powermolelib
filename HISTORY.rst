@@ -187,3 +187,9 @@ History
 ------------------
 
 * Bump 3rd party package to fix security vulnerability
+
+
+3.4.11 (26-01-2025)
+-------------------
+
+* Fix shell command to correctly determine if the agent is running
