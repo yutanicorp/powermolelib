@@ -181,3 +181,9 @@ History
 ------------------
 
 * Bump 3rd party package to fix security vulnerability, update template with newer Python version
+
+
+3.4.9 (26-01-2025)
+------------------
+
+* Bump 3rd party package to fix security vulnerability
