@@ -141,8 +141,7 @@ class BootstrapAgent(LoggerMixin):
         """Determines if an Agent process is (still) running."""
         result = False
         # command = f"pgrep -fc '/bin/python3 {self.path_to_agent}'"
-        command = f'if [ `pgrep -fc \'/bin/python3 {self.path_to_agent}\'` == 0 ]; ' \
-                  f'then echo "count=0"; else echo "count=1"; fi'
+        command = f"if [ $(pgrep -fc '/bin/python3 {self.path_to_agent}') -eq 0 ]; then echo 'count=0'; else echo 'count=1'; fi"
         self._logger.debug('determining if an Agent process is (still) running: %s', command)
         self.tunnel.child.sendline(command)
         # self.tunnel.child.logfile = sys.stdout
